@@ -1,0 +1,1 @@
+# Adapters layer: input/output adapters (HTTP, CLI, etc.) 
