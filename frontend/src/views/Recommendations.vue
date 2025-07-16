@@ -11,9 +11,20 @@
       <div class="user-selection">
         <div class="form-group">
           <label class="form-label">ID de Usuario</label>
-          <input v-model="selectedUserId" type="number" class="form-input" placeholder="1">
+          <input 
+            v-model="selectedUserId" 
+            type="number" 
+            class="form-input" 
+            :class="{ 'error': errors.selectedUserId }"
+            placeholder="1"
+            @blur="validateSelectedUserId"
+            @input="clearError('selectedUserId')"
+            min="1"
+            required
+          >
+          <span v-if="errors.selectedUserId" class="error-message">{{ errors.selectedUserId }}</span>
         </div>
-        <button @click="loadRecommendations" class="btn btn-primary" :disabled="loading">
+        <button @click="loadRecommendations" class="btn btn-primary" :disabled="loading || errors.selectedUserId">
           {{ loading ? 'Cargando...' : 'Obtener Recomendaciones' }}
         </button>
       </div>
@@ -26,15 +37,46 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Categorías Preferidas (IDs separados por comas)</label>
-            <input v-model="preferences.preferred_categories" type="text" class="form-input" placeholder="20,24,28">
+            <input 
+              v-model="preferences.preferred_categories" 
+              type="text" 
+              class="form-input" 
+              :class="{ 'error': errors.preferred_categories }"
+              placeholder="20,24,28"
+              @blur="validateCategories"
+              @input="clearError('preferred_categories')"
+              maxlength="100"
+            >
+            <span v-if="errors.preferred_categories" class="error-message">{{ errors.preferred_categories }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">Canales Preferidos (separados por comas)</label>
-            <input v-model="preferences.preferred_channels" type="text" class="form-input" placeholder="channel1,channel2">
+            <input 
+              v-model="preferences.preferred_channels" 
+              type="text" 
+              class="form-input" 
+              :class="{ 'error': errors.preferred_channels }"
+              placeholder="channel1,channel2"
+              @blur="validateChannels"
+              @input="clearError('preferred_channels')"
+              maxlength="200"
+            >
+            <span v-if="errors.preferred_channels" class="error-message">{{ errors.preferred_channels }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">Duración Máxima (minutos)</label>
-            <input v-model="preferences.max_duration_minutes" type="number" class="form-input" placeholder="30">
+            <input 
+              v-model="preferences.max_duration_minutes" 
+              type="number" 
+              class="form-input" 
+              :class="{ 'error': errors.max_duration_minutes }"
+              placeholder="30"
+              @blur="validateMaxDuration"
+              @input="clearError('max_duration_minutes')"
+              min="1"
+              max="480"
+            >
+            <span v-if="errors.max_duration_minutes" class="error-message">{{ errors.max_duration_minutes }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">Idioma</label>
@@ -45,7 +87,7 @@
             </select>
           </div>
         </div>
-        <button @click="updatePreferences" class="btn btn-secondary" :disabled="updatingPreferences">
+        <button @click="updatePreferences" class="btn btn-secondary" :disabled="updatingPreferences || hasErrors">
           {{ updatingPreferences ? 'Actualizando...' : 'Actualizar Preferencias' }}
         </button>
       </div>
@@ -87,19 +129,64 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">ID de Usuario</label>
-            <input v-model="viewData.user_id" type="number" class="form-input" placeholder="1">
+            <input 
+              v-model="viewData.user_id" 
+              type="number" 
+              class="form-input" 
+              :class="{ 'error': errors.viewUserId }"
+              placeholder="1"
+              @blur="validateViewUserId"
+              @input="clearError('viewUserId')"
+              min="1"
+              required
+            >
+            <span v-if="errors.viewUserId" class="error-message">{{ errors.viewUserId }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">ID del Video</label>
-            <input v-model="viewData.video_id" type="text" class="form-input" placeholder="dQw4w9WgXcQ">
+            <input 
+              v-model="viewData.video_id" 
+              type="text" 
+              class="form-input" 
+              :class="{ 'error': errors.viewVideoId }"
+              placeholder="dQw4w9WgXcQ"
+              @blur="validateViewVideoId"
+              @input="clearError('viewVideoId')"
+              maxlength="20"
+              required
+            >
+            <span v-if="errors.viewVideoId" class="error-message">{{ errors.viewVideoId }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">Título del Video</label>
-            <input v-model="viewData.title" type="text" class="form-input" placeholder="Título del video">
+            <input 
+              v-model="viewData.title" 
+              type="text" 
+              class="form-input" 
+              :class="{ 'error': errors.viewTitle }"
+              placeholder="Título del video"
+              @blur="validateViewTitle"
+              @input="clearError('viewTitle')"
+              maxlength="200"
+              required
+            >
+            <span v-if="errors.viewTitle" class="error-message">{{ errors.viewTitle }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">Duración de Visualización (segundos)</label>
-            <input v-model="viewData.watch_duration_seconds" type="number" class="form-input" placeholder="300">
+            <input 
+              v-model="viewData.watch_duration_seconds" 
+              type="number" 
+              class="form-input" 
+              :class="{ 'error': errors.watchDuration }"
+              placeholder="300"
+              @blur="validateWatchDuration"
+              @input="clearError('watchDuration')"
+              min="0"
+              max="86400"
+              required
+            >
+            <span v-if="errors.watchDuration" class="error-message">{{ errors.watchDuration }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">¿Completado?</label>
@@ -109,7 +196,7 @@
             </select>
           </div>
         </div>
-        <button @click="recordViewData" class="btn btn-primary" :disabled="recordingView">
+        <button @click="recordViewData" class="btn btn-primary" :disabled="recordingView || hasViewErrors">
           {{ recordingView ? 'Registrando...' : 'Registrar Visualización' }}
         </button>
       </div>
@@ -153,7 +240,25 @@ export default {
         title: '',
         watch_duration_seconds: 300,
         completed: true
+      },
+      errors: {
+        selectedUserId: '',
+        preferred_categories: '',
+        preferred_channels: '',
+        max_duration_minutes: '',
+        viewUserId: '',
+        viewVideoId: '',
+        viewTitle: '',
+        watchDuration: ''
       }
+    }
+  },
+  computed: {
+    hasErrors() {
+      return Object.values(this.errors).some(error => error !== '');
+    },
+    hasViewErrors() {
+      return Object.values(this.errors).some(error => error !== '' && error.startsWith('view'));
     }
   },
   mounted() {
@@ -248,6 +353,65 @@ export default {
         month: 'short',
         day: 'numeric'
       })
+    },
+    validateSelectedUserId() {
+      if (!this.selectedUserId) {
+        this.errors.selectedUserId = 'El ID de usuario es obligatorio.';
+      } else {
+        this.errors.selectedUserId = '';
+      }
+    },
+    validateCategories() {
+      if (!this.preferences.preferred_categories) {
+        this.errors.preferred_categories = 'Las categorías son obligatorias.';
+      } else {
+        this.errors.preferred_categories = '';
+      }
+    },
+    validateChannels() {
+      if (!this.preferences.preferred_channels) {
+        this.errors.preferred_channels = 'Los canales son obligatorios.';
+      } else {
+        this.errors.preferred_channels = '';
+      }
+    },
+    validateMaxDuration() {
+      if (!this.preferences.max_duration_minutes) {
+        this.errors.max_duration_minutes = 'La duración máxima es obligatoria.';
+      } else {
+        this.errors.max_duration_minutes = '';
+      }
+    },
+    validateViewUserId() {
+      if (!this.viewData.user_id) {
+        this.errors.viewUserId = 'El ID de usuario es obligatorio.';
+      } else {
+        this.errors.viewUserId = '';
+      }
+    },
+    validateViewVideoId() {
+      if (!this.viewData.video_id) {
+        this.errors.viewVideoId = 'El ID del video es obligatorio.';
+      } else {
+        this.errors.viewVideoId = '';
+      }
+    },
+    validateViewTitle() {
+      if (!this.viewData.title) {
+        this.errors.viewTitle = 'El título del video es obligatorio.';
+      } else {
+        this.errors.viewTitle = '';
+      }
+    },
+    validateWatchDuration() {
+      if (!this.viewData.watch_duration_seconds) {
+        this.errors.watchDuration = 'La duración de visualización es obligatoria.';
+      } else {
+        this.errors.watchDuration = '';
+      }
+    },
+    clearError(field) {
+      this.errors[field] = '';
     }
   }
 }
@@ -363,5 +527,11 @@ export default {
 .btn-sm {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
 </style> 

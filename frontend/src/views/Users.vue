@@ -11,14 +11,36 @@
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Nombre</label>
-          <input v-model="newUser.name" type="text" class="form-input" placeholder="Nombre completo">
+          <input 
+            v-model="newUser.name" 
+            type="text" 
+            class="form-input" 
+            :class="{ 'error': errors.name }"
+            placeholder="Nombre completo"
+            @blur="validateName"
+            @input="clearError('name')"
+            maxlength="100"
+            required
+          >
+          <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input v-model="newUser.email" type="email" class="form-input" placeholder="email@ejemplo.com">
+          <input 
+            v-model="newUser.email" 
+            type="email" 
+            class="form-input" 
+            :class="{ 'error': errors.email }"
+            placeholder="email@ejemplo.com"
+            @blur="validateEmail"
+            @input="clearError('email')"
+            maxlength="255"
+            required
+          >
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
         </div>
       </div>
-      <button @click="createUser" class="btn btn-primary" :disabled="creatingUser">
+      <button @click="createUser" class="btn btn-primary" :disabled="creatingUser || hasErrors">
         {{ creatingUser ? 'Creando...' : 'Crear Usuario' }}
       </button>
     </div>
@@ -29,9 +51,20 @@
       <div class="user-search">
         <div class="form-group">
           <label class="form-label">ID de Usuario</label>
-          <input v-model="searchUserId" type="number" class="form-input" placeholder="1">
+          <input 
+            v-model="searchUserId" 
+            type="number" 
+            class="form-input" 
+            :class="{ 'error': errors.userId }"
+            placeholder="1"
+            @blur="validateUserId"
+            @input="clearError('userId')"
+            min="1"
+            required
+          >
+          <span v-if="errors.userId" class="error-message">{{ errors.userId }}</span>
         </div>
-        <button @click="getUser" class="btn btn-secondary" :disabled="loadingUser">
+        <button @click="getUser" class="btn btn-secondary" :disabled="loadingUser || errors.userId">
           {{ loadingUser ? 'Buscando...' : 'Buscar Usuario' }}
         </button>
       </div>
@@ -89,7 +122,17 @@ export default {
       newUser: {
         name: '',
         email: ''
+      },
+      errors: {
+        name: '',
+        email: '',
+        userId: ''
       }
+    }
+  },
+  computed: {
+    hasErrors() {
+      return Object.values(this.errors).some(error => error !== '');
     }
   },
   methods: {
@@ -138,6 +181,35 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    validateName() {
+      if (!this.newUser.name) {
+        this.errors.name = 'El nombre es requerido';
+      } else {
+        this.errors.name = '';
+      }
+    },
+    validateEmail() {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!this.newUser.email) {
+        this.errors.email = 'El email es requerido';
+      } else if (!emailRegex.test(this.newUser.email)) {
+        this.errors.email = 'Email inválido';
+      } else {
+        this.errors.email = '';
+      }
+    },
+    validateUserId() {
+      if (!this.searchUserId) {
+        this.errors.userId = 'El ID de usuario es requerido';
+      } else if (isNaN(this.searchUserId) || parseInt(this.searchUserId) < 1) {
+        this.errors.userId = 'El ID de usuario debe ser un número positivo';
+      } else {
+        this.errors.userId = '';
+      }
+    },
+    clearError(field) {
+      this.errors[field] = '';
     }
   }
 }
@@ -205,5 +277,11 @@ export default {
   background: #e9ecef;
   border-radius: 8px;
   margin-bottom: 0.5rem;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 </style> 

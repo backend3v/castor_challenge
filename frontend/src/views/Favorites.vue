@@ -11,50 +11,139 @@
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">ID de Usuario</label>
-          <input v-model="newFavorite.user_id" type="number" class="form-input" placeholder="1">
+          <input 
+            v-model="newFavorite.user_id" 
+            type="number" 
+            class="form-input" 
+            :class="{ 'error': errors.user_id }"
+            placeholder="1"
+            @blur="validateUserId"
+            @input="clearError('user_id')"
+            min="1"
+            required
+          >
+          <span v-if="errors.user_id" class="error-message">{{ errors.user_id }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">ID del Video (YouTube)</label>
-          <input v-model="newFavorite.video_id" type="text" class="form-input" placeholder="dQw4w9WgXcQ">
+          <input 
+            v-model="newFavorite.video_id" 
+            type="text" 
+            class="form-input" 
+            :class="{ 'error': errors.video_id }"
+            placeholder="dQw4w9WgXcQ"
+            @blur="validateVideoId"
+            @input="clearError('video_id')"
+            maxlength="20"
+            required
+          >
+          <span v-if="errors.video_id" class="error-message">{{ errors.video_id }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Título</label>
-          <input v-model="newFavorite.title" type="text" class="form-input" placeholder="Título del video">
+          <input 
+            v-model="newFavorite.title" 
+            type="text" 
+            class="form-input" 
+            :class="{ 'error': errors.title }"
+            placeholder="Título del video"
+            @blur="validateTitle"
+            @input="clearError('title')"
+            maxlength="200"
+            required
+          >
+          <span v-if="errors.title" class="error-message">{{ errors.title }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Descripción</label>
-          <textarea v-model="newFavorite.description" class="form-input" placeholder="Descripción del video"></textarea>
+          <textarea 
+            v-model="newFavorite.description" 
+            class="form-input" 
+            placeholder="Descripción del video"
+            maxlength="5000"
+          ></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">URL</label>
-          <input v-model="newFavorite.url" type="url" class="form-input" placeholder="https://youtube.com/watch?v=...">
+          <input 
+            v-model="newFavorite.url" 
+            type="url" 
+            class="form-input" 
+            :class="{ 'error': errors.url }"
+            placeholder="https://youtube.com/watch?v=..."
+            @blur="validateUrl"
+            @input="clearError('url')"
+            maxlength="500"
+          >
+          <span v-if="errors.url" class="error-message">{{ errors.url }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Thumbnail</label>
-          <input v-model="newFavorite.thumbnail" type="url" class="form-input" placeholder="https://...">
+          <input 
+            v-model="newFavorite.thumbnail" 
+            type="url" 
+            class="form-input" 
+            :class="{ 'error': errors.thumbnail }"
+            placeholder="https://..."
+            @blur="validateThumbnail"
+            @input="clearError('thumbnail')"
+            maxlength="500"
+          >
+          <span v-if="errors.thumbnail" class="error-message">{{ errors.thumbnail }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Canal</label>
-          <input v-model="newFavorite.channel" type="text" class="form-input" placeholder="Nombre del canal">
+          <input 
+            v-model="newFavorite.channel" 
+            type="text" 
+            class="form-input" 
+            placeholder="Nombre del canal"
+            maxlength="100"
+          >
         </div>
         <div class="form-group">
           <label class="form-label">Duración</label>
-          <input v-model="newFavorite.duration" type="text" class="form-input" placeholder="10:30">
+          <input 
+            v-model="newFavorite.duration" 
+            type="text" 
+            class="form-input" 
+            :class="{ 'error': errors.duration }"
+            placeholder="10:30"
+            @blur="validateDuration"
+            @input="clearError('duration')"
+            maxlength="10"
+          >
+          <span v-if="errors.duration" class="error-message">{{ errors.duration }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Fecha de Publicación</label>
-          <input v-model="newFavorite.published_at" type="datetime-local" class="form-input">
+          <input 
+            v-model="newFavorite.published_at" 
+            type="datetime-local" 
+            class="form-input"
+          >
         </div>
         <div class="form-group">
           <label class="form-label">Notas</label>
-          <textarea v-model="newFavorite.notes" class="form-input" placeholder="Notas personales"></textarea>
+          <textarea 
+            v-model="newFavorite.notes" 
+            class="form-input" 
+            placeholder="Notas personales"
+            maxlength="1000"
+          ></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Etiquetas (separadas por comas)</label>
-          <input v-model="newFavorite.tags" type="text" class="form-input" placeholder="música, entretenimiento, tutorial">
+          <input 
+            v-model="newFavorite.tags" 
+            type="text" 
+            class="form-input" 
+            placeholder="música, entretenimiento, tutorial"
+            maxlength="500"
+          >
         </div>
       </div>
-      <button @click="addFavorite" class="btn btn-primary" :disabled="addingFavorite">
+      <button @click="addFavorite" class="btn btn-primary" :disabled="addingFavorite || hasErrors">
         {{ addingFavorite ? 'Agregando...' : 'Agregar a Favoritos' }}
       </button>
     </div>
@@ -65,9 +154,20 @@
       <div class="user-selection">
         <div class="form-group">
           <label class="form-label">ID de Usuario</label>
-          <input v-model="selectedUserId" type="number" class="form-input" placeholder="1">
+          <input 
+            v-model="selectedUserId" 
+            type="number" 
+            class="form-input" 
+            :class="{ 'error': errors.selectedUserId }"
+            placeholder="1"
+            @blur="validateSelectedUserId"
+            @input="clearError('selectedUserId')"
+            min="1"
+            required
+          >
+          <span v-if="errors.selectedUserId" class="error-message">{{ errors.selectedUserId }}</span>
         </div>
-        <button @click="loadFavorites" class="btn btn-secondary" :disabled="loading">
+        <button @click="loadFavorites" class="btn btn-secondary" :disabled="loading || errors.selectedUserId">
           {{ loading ? 'Cargando...' : 'Cargar Favoritos' }}
         </button>
       </div>
@@ -139,7 +239,21 @@ export default {
         published_at: '',
         notes: '',
         tags: ''
+      },
+      errors: {
+        user_id: '',
+        video_id: '',
+        title: '',
+        url: '',
+        thumbnail: '',
+        duration: '',
+        selectedUserId: ''
       }
+    }
+  },
+  computed: {
+    hasErrors() {
+      return Object.values(this.errors).some(error => error !== '');
     }
   },
   mounted() {
@@ -211,6 +325,15 @@ export default {
         notes: '',
         tags: ''
       }
+      this.errors = {
+        user_id: '',
+        video_id: '',
+        title: '',
+        url: '',
+        thumbnail: '',
+        duration: '',
+        selectedUserId: ''
+      }
     },
 
     formatDate(dateString) {
@@ -221,6 +344,66 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+
+    validateUserId() {
+      if (!this.newFavorite.user_id) {
+        this.errors.user_id = 'El ID de usuario es requerido.';
+      } else {
+        this.errors.user_id = '';
+      }
+    },
+
+    validateVideoId() {
+      if (!this.newFavorite.video_id) {
+        this.errors.video_id = 'El ID del video es requerido.';
+      } else {
+        this.errors.video_id = '';
+      }
+    },
+
+    validateTitle() {
+      if (!this.newFavorite.title) {
+        this.errors.title = 'El título es requerido.';
+      } else {
+        this.errors.title = '';
+      }
+    },
+
+    validateUrl() {
+      if (!this.newFavorite.url) {
+        this.errors.url = 'La URL es requerida.';
+      } else {
+        this.errors.url = '';
+      }
+    },
+
+    validateThumbnail() {
+      if (!this.newFavorite.thumbnail) {
+        this.errors.thumbnail = 'La URL de la miniatura es requerida.';
+      } else {
+        this.errors.thumbnail = '';
+      }
+    },
+
+    validateDuration() {
+      if (!this.newFavorite.duration) {
+        this.errors.duration = 'La duración es requerida.';
+      } else {
+        this.errors.duration = '';
+      }
+    },
+
+    validateSelectedUserId() {
+      if (!this.selectedUserId) {
+        this.errors.selectedUserId = 'El ID de usuario es requerido.';
+      } else {
+        this.errors.selectedUserId = '';
+      }
+    },
+
+    clearError(field) {
+      this.errors[field] = '';
     }
   }
 }
@@ -332,5 +515,11 @@ export default {
 
 .empty-state h3 {
   margin-bottom: 0.5rem;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
 </style> 

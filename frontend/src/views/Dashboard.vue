@@ -42,13 +42,35 @@
         <div class="user-form">
           <div class="form-group">
             <label class="form-label">Nombre</label>
-            <input v-model="newUser.name" type="text" class="form-input" placeholder="Nombre del usuario">
+            <input 
+              v-model="newUser.name" 
+              type="text" 
+              class="form-input" 
+              :class="{ 'error': errors.name }"
+              placeholder="Nombre del usuario"
+              @blur="validateName"
+              @input="clearError('name')"
+              maxlength="100"
+              required
+            >
+            <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
           </div>
           <div class="form-group">
             <label class="form-label">Email</label>
-            <input v-model="newUser.email" type="email" class="form-input" placeholder="email@ejemplo.com">
+            <input 
+              v-model="newUser.email" 
+              type="email" 
+              class="form-input" 
+              :class="{ 'error': errors.email }"
+              placeholder="email@ejemplo.com"
+              @blur="validateEmail"
+              @input="clearError('email')"
+              maxlength="255"
+              required
+            >
+            <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
           </div>
-          <button @click="createUser" class="btn btn-primary" :disabled="creatingUser">
+          <button @click="createUser" class="btn btn-primary" :disabled="creatingUser || hasErrors">
             {{ creatingUser ? 'Creando...' : 'Crear Usuario' }}
           </button>
         </div>
@@ -116,7 +138,16 @@ export default {
       newUser: {
         name: '',
         email: ''
+      },
+      errors: {
+        name: '',
+        email: ''
       }
+    }
+  },
+  computed: {
+    hasErrors() {
+      return Object.values(this.errors).some(error => error !== '');
     }
   },
   mounted() {
@@ -154,6 +185,26 @@ export default {
       } finally {
         this.creatingUser = false
       }
+    },
+    validateName() {
+      if (!this.newUser.name) {
+        this.errors.name = 'El nombre es requerido';
+      } else {
+        this.errors.name = '';
+      }
+    },
+    validateEmail() {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!this.newUser.email) {
+        this.errors.email = 'El email es requerido';
+      } else if (!emailRegex.test(this.newUser.email)) {
+        this.errors.email = 'Email inválido';
+      } else {
+        this.errors.email = '';
+      }
+    },
+    clearError(field) {
+      this.errors[field] = '';
     }
   }
 }
@@ -233,5 +284,17 @@ export default {
 
 .feature-item li {
   margin-bottom: 0.25rem;
+}
+
+.form-input.error {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
 }
 </style> 

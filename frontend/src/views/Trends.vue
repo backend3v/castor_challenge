@@ -21,9 +21,20 @@
         </div>
         <div class="form-group">
           <label class="form-label">Máximo de resultados</label>
-          <input v-model="filters.max_results" type="number" class="form-input" min="1" max="50">
+          <input 
+            v-model="filters.max_results" 
+            type="number" 
+            class="form-input" 
+            :class="{ 'error': errors.max_results }"
+            min="1" 
+            max="50"
+            @blur="validateMaxResults"
+            @input="clearError('max_results')"
+            required
+          >
+          <span v-if="errors.max_results" class="error-message">{{ errors.max_results }}</span>
         </div>
-        <button @click="loadTrends" class="btn btn-primary" :disabled="loading">
+        <button @click="loadTrends" class="btn btn-primary" :disabled="loading || hasErrors">
           {{ loading ? 'Cargando...' : 'Cargar Tendencias' }}
         </button>
       </div>
@@ -66,9 +77,20 @@
       <div class="analysis-controls">
         <div class="form-group">
           <label class="form-label">Días hacia atrás</label>
-          <input v-model="analysisFilters.days_back" type="number" class="form-input" min="1" max="30">
+          <input 
+            v-model="analysisFilters.days_back" 
+            type="number" 
+            class="form-input" 
+            :class="{ 'error': errors.days_back }"
+            min="1" 
+            max="30"
+            @blur="validateDaysBack"
+            @input="clearError('days_back')"
+            required
+          >
+          <span v-if="errors.days_back" class="error-message">{{ errors.days_back }}</span>
         </div>
-        <button @click="loadAnalysis" class="btn btn-secondary" :disabled="loadingAnalysis">
+        <button @click="loadAnalysis" class="btn btn-secondary" :disabled="loadingAnalysis || errors.days_back">
           {{ loadingAnalysis ? 'Analizando...' : 'Obtener Análisis' }}
         </button>
       </div>
@@ -152,7 +174,16 @@ export default {
         27: 'Education',
         28: 'Science & Technology',
         29: 'Nonprofits & Activism'
+      },
+      errors: {
+        max_results: '',
+        days_back: ''
       }
+    }
+  },
+  computed: {
+    hasErrors() {
+      return Object.values(this.errors).some(error => error !== '');
     }
   },
   mounted() {
@@ -227,6 +258,26 @@ export default {
         month: 'short',
         day: 'numeric'
       })
+    },
+
+    validateMaxResults() {
+      if (this.filters.max_results < 1 || this.filters.max_results > 50) {
+        this.errors.max_results = 'El máximo de resultados debe ser entre 1 y 50.';
+      } else {
+        this.errors.max_results = '';
+      }
+    },
+
+    validateDaysBack() {
+      if (this.analysisFilters.days_back < 1 || this.analysisFilters.days_back > 30) {
+        this.errors.days_back = 'Los días hacia atrás deben ser entre 1 y 30.';
+      } else {
+        this.errors.days_back = '';
+      }
+    },
+
+    clearError(field) {
+      this.errors[field] = '';
     }
   }
 }
@@ -389,5 +440,11 @@ export default {
 .btn-sm {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
 </style> 
