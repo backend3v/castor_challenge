@@ -10,3 +10,4 @@
    - Use descriptive class names and avoid excessive use of IDs.
    - Prefer BEM or similar conventions for class naming.
    - Keep CSS modular and reusable. 
+
