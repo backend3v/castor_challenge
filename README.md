@@ -371,15 +371,35 @@ cd backend
 pip install -r requirements.txt
 
 # Configure environment
-cp .env.example .env
-# Edit .env with your configuration:
-# - YouTube API key
+# Edit backend/env with your configuration:
+# - YouTube API key (REQUIRED for full functionality)
 # - Database credentials
 # - Other settings
 
 # Run the application
 python main.py
 ```
+
+### 📺 YouTube API Configuration (REQUIRED)
+
+Para que la aplicación funcione completamente con datos reales de YouTube:
+
+1. **Obtener API Key**:
+   - Ve a [Google Cloud Console](https://console.cloud.google.com/)
+   - Crea un proyecto y habilita YouTube Data API v3
+   - Genera una API key
+
+2. **Configurar en la aplicación**:
+   - Edita el archivo `backend/env`
+   - Reemplaza `your_youtube_api_key_here` con tu API key real
+
+3. **Verificar configuración**:
+   - Reinicia el servidor Flask
+   - Ve a la página de tendencias para ver videos reales
+
+**Nota**: Sin la API key, la aplicación usará datos mock como fallback.
+
+Para instrucciones detalladas, consulta: `backend/YOUTUBE_API_SETUP.md`
 
 ### 3. Frontend Setup
 ```bash
