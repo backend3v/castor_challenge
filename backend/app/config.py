@@ -10,4 +10,7 @@ class Config:
 
     # External API configuration
     EXTERNAL_API_URL = os.getenv('EXTERNAL_API_URL')
-    EXTERNAL_API_KEY = os.getenv('EXTERNAL_API_KEY') 
+    EXTERNAL_API_KEY = os.getenv('EXTERNAL_API_KEY')
+    
+    # YouTube API configuration
+    YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY') 

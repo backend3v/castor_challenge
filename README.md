@@ -1,6 +1,6 @@
 # Castor Challenge
 
-A full-stack web application built with Python Flask (backend) and Vue.js (frontend), following clean architecture principles and SOLID design patterns.
+A full-stack web application built with Python Flask (backend) and Vue.js (frontend), following clean architecture principles and SOLID design patterns. The application provides YouTube video management services including favorites, trend analysis, and personalized recommendations.
 
 ## 📁 Project Structure
 
@@ -9,8 +9,20 @@ castor_challenge/
 ├── backend/                 # Python Flask Backend
 │   ├── app/
 │   │   ├── domain/         # Business entities and logic
+│   │   │   ├── models.py   # Domain models
+│   │   │   └── repositories.py # Repository interfaces
 │   │   ├── use_cases/      # Application orchestration
+│   │   │   ├── video_favoritos.py
+│   │   │   ├── analisis_tendencias.py
+│   │   │   └── recomendaciones.py
 │   │   ├── infrastructure/ # Database, external APIs
+│   │   │   ├── database_schema.sql
+│   │   │   └── repositories/
+│   │   │       ├── user_repository.py
+│   │   │       ├── favorite_video_repository.py
+│   │   │       ├── trend_analysis_repository.py
+│   │   │       ├── view_history_repository.py
+│   │   │       └── user_preferences_repository.py
 │   │   ├── adapters/       # Input/output adapters
 │   │   ├── application.py  # Flask app initialization
 │   │   ├── config.py       # Configuration management
@@ -24,6 +36,7 @@ castor_challenge/
 │   │   └── App.vue        # Main application component
 │   ├── vite.config.js     # Vite configuration
 │   └── .env              # Environment variables
+├── docker-compose.yml     # MySQL database setup
 └── RULES_GENERAL.md       # General project rules
 ```
 
@@ -32,46 +45,433 @@ castor_challenge/
 ### 🛠️ Technologies
 - **Python 3.x**
 - **Flask** - Web framework
+- **MySQL** - Database
+- **YouTube Data API v3** - External video data
 - **Architecture**: Hexagonal (Clean Architecture)
 - **Design Patterns**: SOLID principles
 
 ### ✨ Features
 - RESTful API design
+- YouTube video management services
+- MySQL database integration
 - Environment-based configuration
 - Modular structure following clean architecture
-- Test endpoint available at `/test`
 
-### 🚀 Setup and Run
+## 📚 API Documentation
 
-1. **Install dependencies:**
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   ```
+### Base URL
+```
+http://localhost:5000
+```
 
-2. **Configure environment:**
-   Create a `.env` file in the `backend/` directory:
-   ```env
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=mydatabase
-   DB_USER=user
-   DB_PASSWORD=password
-   EXTERNAL_API_URL=https://api.example.com
-   EXTERNAL_API_KEY=your_api_key
-   ```
+### 🔧 System Endpoints
 
-3. **Run the application:**
-   ```bash
-   python main.py
-   ```
+#### Test Endpoint
+```http
+GET /test
+```
+**Description**: Basic health check endpoint
+**Response**: `{"message": "Hello from Castor Challenge!"}`
 
-4. **Test the API:**
-   ```bash
-   curl http://localhost:5000/test
-   ```
+#### Database Test
+```http
+GET /test_db
+```
+**Description**: Test database connection
+**Response**: `{"message": "Database connection successful"}`
 
-### 🏗️ Architecture
+### 🎥 Video Favorites Service
+
+#### Get User Favorites
+```http
+GET /api/favorites/{user_id}
+```
+**Description**: Retrieve all favorite videos for a user
+**Parameters**:
+- `user_id` (path): User identifier
+
+**Response**:
+```json
+{
+  "success": true,
+  "favorites": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "video_id": "dQw4w9WgXcQ",
+      "title": "Video Title",
+      "description": "Video description",
+      "thumbnail_url": "https://...",
+      "channel_title": "Channel Name",
+      "published_at": "2023-01-01T00:00:00Z",
+      "created_at": "2023-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+#### Add Favorite Video
+```http
+POST /api/favorites
+```
+**Description**: Add a video to user's favorites
+**Body**:
+```json
+{
+  "user_id": 1,
+  "video_id": "dQw4w9WgXcQ",
+  "title": "Video Title",
+  "description": "Video description",
+  "thumbnail_url": "https://...",
+  "channel_title": "Channel Name",
+  "published_at": "2023-01-01T00:00:00Z"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Video added to favorites",
+  "favorite_id": 1
+}
+```
+
+#### Remove Favorite Video
+```http
+DELETE /api/favorites/{user_id}/{video_id}
+```
+**Description**: Remove a video from user's favorites
+**Parameters**:
+- `user_id` (path): User identifier
+- `video_id` (path): YouTube video ID
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Video removed from favorites"
+}
+```
+
+### 📊 Trend Analysis Service
+
+#### Get Trending Videos
+```http
+GET /api/trends
+```
+**Description**: Get current trending videos from YouTube
+**Query Parameters**:
+- `region_code` (optional): Country code (default: "US")
+- `max_results` (optional): Number of results (default: 10)
+
+**Response**:
+```json
+{
+  "success": true,
+  "trends": [
+    {
+      "id": 1,
+      "video_id": "dQw4w9WgXcQ",
+      "title": "Trending Video",
+      "description": "Video description",
+      "thumbnail_url": "https://...",
+      "channel_title": "Channel Name",
+      "published_at": "2023-01-01T00:00:00Z",
+      "view_count": 1000000,
+      "like_count": 50000,
+      "comment_count": 1000,
+      "category_id": 20,
+      "region_code": "US",
+      "created_at": "2023-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+#### Get Trend Analysis
+```http
+GET /api/trends/analysis
+```
+**Description**: Get analyzed trend data with insights
+**Query Parameters**:
+- `region_code` (optional): Country code (default: "US")
+- `category_id` (optional): Video category filter
+- `days_back` (optional): Days to analyze (default: 7)
+
+**Response**:
+```json
+{
+  "success": true,
+  "analysis": {
+    "total_videos": 50,
+    "total_views": 50000000,
+    "avg_views": 1000000,
+    "top_categories": [
+      {"category_id": 20, "count": 15, "name": "Gaming"}
+    ],
+    "top_channels": [
+      {"channel": "Channel Name", "videos": 5, "total_views": 10000000}
+    ],
+    "trending_videos": [...]
+  }
+}
+```
+
+### 🎯 Recommendations Service
+
+#### Get User Recommendations
+```http
+GET /api/recommendations/{user_id}
+```
+**Description**: Get personalized video recommendations for a user
+**Parameters**:
+- `user_id` (path): User identifier
+
+**Query Parameters**:
+- `max_results` (optional): Number of recommendations (default: 10)
+
+**Response**:
+```json
+{
+  "success": true,
+  "recommendations": [
+    {
+      "id": 1,
+      "video_id": "dQw4w9WgXcQ",
+      "title": "Recommended Video",
+      "description": "Video description",
+      "thumbnail_url": "https://...",
+      "channel_title": "Channel Name",
+      "published_at": "2023-01-01T00:00:00Z",
+      "score": 0.85,
+      "reason": "Based on your favorite categories"
+    }
+  ]
+}
+```
+
+#### Update User Preferences
+```http
+POST /api/recommendations/preferences
+```
+**Description**: Update user preferences for better recommendations
+**Body**:
+```json
+{
+  "user_id": 1,
+  "preferred_categories": [20, 24, 28],
+  "preferred_channels": ["channel1", "channel2"],
+  "max_duration_minutes": 30,
+  "language": "en"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Preferences updated successfully"
+}
+```
+
+#### Record Video View
+```http
+POST /api/recommendations/view
+```
+**Description**: Record a video view for recommendation learning
+**Body**:
+```json
+{
+  "user_id": 1,
+  "video_id": "dQw4w9WgXcQ",
+  "watch_duration_seconds": 300,
+  "completed": true
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "View recorded successfully"
+}
+```
+
+### 🗄️ User Management
+
+#### Create User
+```http
+POST /api/users
+```
+**Description**: Create a new user
+**Body**:
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "name": "John Doe"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "created_at": "2023-01-01T00:00:00Z"
+  }
+}
+```
+
+#### Get User
+```http
+GET /api/users/{user_id}
+```
+**Description**: Get user information
+**Parameters**:
+- `user_id` (path): User identifier
+
+**Response**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "created_at": "2023-01-01T00:00:00Z"
+  }
+}
+```
+
+## 🚀 Setup and Run
+
+### 1. Database Setup
+```bash
+# Option 1: Automated setup (Recommended)
+./setup_database.sh
+
+# Option 2: Manual setup
+docker-compose up -d
+# Wait for MySQL to start, then run:
+mysql -h localhost -P 3306 -u root -prootpassword < backend/app/infrastructure/database_schema.sql
+```
+
+### 2. Backend Setup
+```bash
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your configuration:
+# - YouTube API key
+# - Database credentials
+# - Other settings
+
+# Run the application
+python main.py
+```
+
+### 3. Frontend Setup
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run development server
+npm run dev
+```
+
+## 🐳 Docker Configuration
+
+The application uses Docker for the MySQL database. The setup includes:
+
+- **MySQL 8.0** container with persistent data storage
+- **Automatic schema initialization** via `docker/init.sql`
+- **Persistent volumes** to maintain data between container restarts
+- **Health checks** to ensure database is ready before use
+
+### Database Credentials (Docker)
+- **Host**: localhost
+- **Port**: 3306
+- **Database**: castor_db
+- **User**: castor_user
+- **Password**: castor_password
+- **Root Password**: rootpassword
+
+## 🔧 Environment Configuration
+
+### Backend (.env)
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=castor_challenge
+DB_USER=root
+DB_PASSWORD=password
+
+# YouTube API
+YOUTUBE_API_KEY=your_youtube_api_key_here
+
+# Flask
+FLASK_ENV=development
+FLASK_DEBUG=True
+```
+
+### Frontend (.env)
+```env
+VITE_APP_NAME=Castor Challenge
+VITE_APP_HOST=localhost
+VITE_APP_PORT=5173
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+## 🧪 Testing Endpoints
+
+### Test Basic Functionality
+```bash
+# Test backend health
+curl http://localhost:5000/test
+
+# Test database connection
+curl http://localhost:5000/test_db
+```
+
+### Test Video Services
+```bash
+# Get trending videos
+curl http://localhost:5000/api/trends
+
+# Get user favorites (replace USER_ID)
+curl http://localhost:5000/api/favorites/1
+
+# Get recommendations (replace USER_ID)
+curl http://localhost:5000/api/recommendations/1
+```
+
+## 🔑 YouTube API Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable YouTube Data API v3
+4. Create credentials (API Key)
+5. Add the API key to your backend `.env` file
+
+## 🏗️ Architecture
 
 The backend follows hexagonal architecture with clear separation of concerns:
 
@@ -79,6 +479,22 @@ The backend follows hexagonal architecture with clear separation of concerns:
 - **Use Cases**: Application orchestration
 - **Infrastructure**: External dependencies (DB, APIs)
 - **Adapters**: Input/output interfaces (HTTP, CLI)
+
+### Database Schema
+- `users`: User information and authentication
+- `favorite_videos`: User's favorite videos with metadata
+- `trend_analysis`: Trending video analysis results
+- `view_history`: User video viewing history and engagement
+- `user_preferences`: User preference settings for recommendations
+- `trending_videos_cache`: Cached trending videos from YouTube API
+- `video_categories`: Reference table for YouTube video categories
+
+#### Key Features:
+- **JSON fields** for flexible data storage (tags, preferences, analysis results)
+- **Optimized indexes** for fast queries on common operations
+- **Foreign key constraints** for data integrity
+- **Caching table** for YouTube trending data to reduce API calls
+- **Category reference** for standardized video categorization
 
 ## 🎨 Frontend (Vue.js + Vite)
 
@@ -93,30 +509,6 @@ The backend follows hexagonal architecture with clear separation of concerns:
 - Modern, minimalist UI
 - Dynamic app name from environment variables
 
-### 🚀 Setup and Run
-
-1. **Install dependencies:**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Configure environment:**
-   Create a `.env` file in the `frontend/` directory:
-   ```env
-   VITE_APP_NAME=castor_challenge
-   VITE_APP_HOST=localhost
-   VITE_APP_PORT=5173
-   ```
-
-3. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Access the application:**
-   Open `http://localhost:5173` in your browser
-
 ### 📦 Build for Production
 
 ```bash
@@ -128,10 +520,6 @@ npm run build
 The project follows strict development rules documented in separate files:
 
 - `RULES_GENERAL.md` - General project rules and SOLID principles
-- `backend/RULES_BACKEND.md` - Backend-specific rules
-- `frontend/RULES_FRONTEND.md` - Frontend-specific rules
-- `frontend/RULES_MARKUP.md` - HTML/Vue markup rules
-- `frontend/RULES_CSS.md` - CSS styling rules
 
 ## 🔑 Key Principles
 
@@ -153,26 +541,14 @@ The project follows strict development rules documented in separate files:
 - Consistent naming conventions
 - Modular and reusable components
 
-## ⚙️ Environment Configuration
-
-Both backend and frontend use environment variables for configuration:
-
-- **Backend**: Database connections, external API settings
-- **Frontend**: App name, host, port, API endpoints
-
-This approach ensures:
-- 🔒 Security (no hardcoded secrets)
-- 🔄 Flexibility (different configs per environment)
-- 🛠️ Maintainability (centralized configuration)
-
 ## 🚀 Next Steps
 
-1. 🔗 Implement database integration
-2. 🔐 Add authentication system
-3. 📡 Create API endpoints for business logic
-4. 🎨 Develop frontend components and pages
-5. 🧪 Add comprehensive testing
-6. 🔄 Set up CI/CD pipeline
+1. 🔐 Add authentication system
+2. 🎨 Develop frontend components and pages
+3. 🧪 Add comprehensive testing
+4. 🔄 Set up CI/CD pipeline
+5. 📊 Add analytics and monitoring
+6. 🔒 Implement rate limiting and security
 
 ## 🤝 Contributing
 
