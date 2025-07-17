@@ -106,11 +106,29 @@ export const apiService = {
     }
   },
 
+  // Check backend health (system status)
+  // Returns { healthy: true } if backend is up, or { healthy: false, error } if not.
   testConnection: async () => {
-    return await api.get('/test')
+    try {
+      await api.get('/test')
+      return { healthy: true }
+    } catch (error) {
+      return { healthy: false, error: error.message || 'Unable to connect to backend.' }
+    }
   },
+
+  // Check database connection health
+  // Returns { healthy: true } if DB is up, or { healthy: false, error } if not.
   testDatabase: async () => {
-    return await api.get('/test_db')
+    try {
+      const response = await api.get('/test_db')
+      if (response.status === 'ok' || response.status === 'connected') {
+        return { healthy: true }
+      }
+      return { healthy: false, error: response.message || 'Database not healthy.' }
+    } catch (error) {
+      return { healthy: false, error: error.message || 'Unable to connect to database.' }
+    }
   }
 }
 
