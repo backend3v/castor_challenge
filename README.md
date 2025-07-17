@@ -103,16 +103,13 @@ http://localhost:5000
 
 ## 📝 Notas
 - Todas las funcionalidades requieren estar autenticado, excepto la guía.
-- El sistema nunca solicita el ID de usuario manualmente.
 - La base de datos se inicializa con el esquema de `docker/init.sql`.
 - Para pruebas, puedes crear usuarios desde la interfaz o usando los endpoints.
 
 ## 🔄 Actualizaciones Recientes
 
-- El frontend usa siempre el usuario autenticado, nunca solicita el ID
 - Las recomendaciones solo aparecen si el usuario tiene favoritos
 - Se eliminaron scripts y migraciones obsoletas
-- Documentación y comentarios traducidos al español
 
 ## 📄 Licencia
 
