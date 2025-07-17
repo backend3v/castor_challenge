@@ -429,7 +429,7 @@ cd backend
 pip install -r requirements.txt
 
 # Configure environment
-# Edit backend/env with your configuration:
+# Edit backend/.env with your configuration:
 # - YouTube API key (REQUIRED for full functionality)
 # - Database credentials
 # - Other settings
@@ -448,7 +448,7 @@ Para que la aplicación funcione completamente con datos reales de YouTube:
    - Genera una API key
 
 2. **Configurar en la aplicación**:
-   - Edita el archivo `backend/env`
+   - Edita el archivo `backend/.env`
    - Reemplaza `your_youtube_api_key_here` con tu API key real
 
 3. **Verificar configuración**:
