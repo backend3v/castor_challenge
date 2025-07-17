@@ -1,19 +1,25 @@
 import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-
+// Create axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-// Request interceptor
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`)
+    const authStore = useAuthStore()
+    const token = authStore.token
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    
     return config
   },
   (error) => {
@@ -21,42 +27,267 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor
+// Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => {
-    return response
+    return response.data
   },
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message)
+  async (error) => {
+    const originalRequest = error.config
+    const authStore = useAuthStore()
+    
+    // If error is 401 and we haven't tried to refresh token yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+      
+      try {
+        // Try to refresh the token
+        const newToken = await authStore.refreshAccessToken()
+        
+        // Retry the original request with new token
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return api(originalRequest)
+      } catch (refreshError) {
+        // If refresh fails, redirect to login
+        await authStore.logout()
+        window.location.href = '/login'
+        return Promise.reject(refreshError)
+      }
+    }
+    
     return Promise.reject(error)
   }
 )
 
-// API methods
+// API service methods
 export const apiService = {
-  // System endpoints
-  testConnection: () => api.get('/test'),
-  testDatabase: () => api.get('/test_db'),
+  // GET request
+  get: async (url, config = {}) => {
+    try {
+      return await api.get(url, config)
+    } catch (error) {
+      throw error
+    }
+  },
 
-  // Users
-  createUser: (userData) => api.post('/api/users', userData),
-  getUser: (userId) => api.get(`/api/users/${userId}`),
-  getAllUsers: () => api.get('/api/users'),
-  searchUsers: (name) => api.get('/api/users/search', { params: { name } }),
+  // POST request
+  post: async (url, data = {}, config = {}) => {
+    try {
+      return await api.post(url, data, config)
+    } catch (error) {
+      throw error
+    }
+  },
 
-  // Favorites
-  getFavorites: (userId) => api.get(`/api/favorites/${userId}`),
-  addFavorite: (favoriteData) => api.post('/api/favorites', favoriteData),
-  removeFavorite: (userId, videoId) => api.delete(`/api/favorites/${userId}/${videoId}`),
+  // PUT request
+  put: async (url, data = {}, config = {}) => {
+    try {
+      return await api.put(url, data, config)
+    } catch (error) {
+      throw error
+    }
+  },
 
-  // Trends
-  getTrends: (params = {}) => api.get('/api/trends', { params }),
-  getTrendAnalysis: (params = {}) => api.get('/api/trends/analysis', { params }),
+  // DELETE request
+  delete: async (url, config = {}) => {
+    try {
+      return await api.delete(url, config)
+    } catch (error) {
+      throw error
+    }
+  },
 
-  // Recommendations
-  getRecommendations: (userId, params = {}) => api.get(`/api/recommendations/${userId}`, { params }),
-  updatePreferences: (preferencesData) => api.post('/api/recommendations/preferences', preferencesData),
-  recordView: (viewData) => api.post('/api/recommendations/view', viewData)
+  // PATCH request
+  patch: async (url, data = {}, config = {}) => {
+    try {
+      return await api.patch(url, data, config)
+    } catch (error) {
+      throw error
+    }
+  },
+
+  testConnection: async () => {
+    return await api.get('/test')
+  },
+  testDatabase: async () => {
+    return await api.get('/test_db')
+  }
 }
 
-export default api 
+// YouTube API service
+export const youtubeService = {
+  // Get trending videos
+  getTrending: async (region = 'AR', maxResults = 10) => {
+    try {
+      const response = await apiService.get('/api/trends', {
+        params: { region, max_results: maxResults }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Search videos
+  searchVideos: async (query, maxResults = 10) => {
+    try {
+      const response = await apiService.get('/api/v1/youtube/search', {
+        params: { q: query, max_results: maxResults }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Get video details
+  getVideoDetails: async (videoId) => {
+    try {
+      const response = await apiService.get(`/api/v1/youtube/video/${videoId}`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Get video categories
+  getCategories: async (region = 'AR') => {
+    try {
+      const response = await apiService.get('/api/v1/youtube/categories', {
+        params: { region }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+}
+
+// Favorites service
+export const favoritesService = {
+  // Get user favorites
+  getFavorites: async () => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    try {
+      const response = await apiService.get('/api/favorites', { params: { user_id: userId } })
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Add to favorites
+  addFavorite: async (videoData) => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    try {
+      const response = await apiService.post('/api/favorites', { ...videoData, user_id: userId })
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Remove from favorites
+  removeFavorite: async (videoId) => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    try {
+      const response = await apiService.delete(`/api/favorites/${videoId}`, { params: { user_id: userId } })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+}
+
+// Recommendations service
+export const recommendationsService = {
+  // Get user recommendations
+  getRecommendations: async () => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    try {
+      const response = await apiService.get('/api/recommendations', { params: { user_id: userId } })
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Update user preferences
+  updatePreferences: async (preferences) => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    try {
+      const response = await apiService.post('/api/recommendations/preferences', { ...preferences, user_id: userId })
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Record video view
+  recordView: async (viewData) => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    try {
+      const response = await apiService.post('/api/recommendations/view', { ...viewData, user_id: userId })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+}
+
+// User service
+export const userService = {
+  // Get current user
+  getCurrentUser: async () => {
+    try {
+      const response = await apiService.get('/api/auth/me')
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Get all users (admin only)
+  getAllUsers: async () => {
+    try {
+      const response = await apiService.get('/api/users')
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // Search users
+  searchUsers: async (name) => {
+    try {
+      const response = await apiService.get('/api/users/search', {
+        params: { name }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+}
+
+export default apiService 
+export const trendsService = {
+  getTrends: async (region = 'AR', maxResults = 10) => {
+    const authStore = useAuthStore()
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('No user logged in')
+    return await apiService.get('/api/trends', { params: { user_id: userId, region, max_results: maxResults } })
+  }
+}

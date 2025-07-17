@@ -83,7 +83,7 @@
       <div class="grid grid-2">
         <div class="feature-item">
           <h4>❤️ Gestión de Favoritos</h4>
-          <p>Guarda y organiza tus videos favoritos de YouTube con metadatos completos.</p>
+          <p>Guarda y organiza tus videos favoritos de YouTube con metadatos completos. Todas las acciones se realizan automáticamente con tu usuario autenticado.</p>
           <ul>
             <li>Agregar videos a favoritos</li>
             <li>Organizar por etiquetas</li>
@@ -103,7 +103,7 @@
         
         <div class="feature-item">
           <h4>🎯 Sistema de Recomendaciones</h4>
-          <p>Recibe recomendaciones personalizadas basadas en tus preferencias.</p>
+          <p>Recibe recomendaciones personalizadas basadas en tus favoritos. Si no tienes favoritos, la lista estará vacía.</p>
           <ul>
             <li>Recomendaciones inteligentes</li>
             <li>Preferencias personalizables</li>
@@ -113,7 +113,7 @@
         
         <div class="feature-item">
           <h4>👥 Gestión de Usuarios</h4>
-          <p>Administra usuarios y sus preferencias de manera eficiente.</p>
+          <p>Administra usuarios y sus preferencias de manera eficiente. El sistema nunca solicita el ID manualmente.</p>
           <ul>
             <li>Crear y gestionar usuarios</li>
             <li>Configurar preferencias</li>

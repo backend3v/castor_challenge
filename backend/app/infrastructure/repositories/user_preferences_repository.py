@@ -85,6 +85,44 @@ class MySQLUserPreferencesRepository(UserPreferencesRepository):
             if connection:
                 connection.close()
     
+    def update_preferences(self, user_id: int, genres: List[str] = None, topics: List[str] = None, 
+                          languages: List[str] = None, min_duration: Optional[int] = None, 
+                          max_duration: Optional[int] = None) -> UserPreferences:
+        """Update user preferences by user ID"""
+        try:
+            # Get existing preferences or create new ones
+            existing_prefs = self.get_by_user(user_id)
+            
+            if existing_prefs:
+                # Update existing preferences
+                if genres is not None:
+                    existing_prefs.genres = genres
+                if topics is not None:
+                    existing_prefs.topics = topics
+                if languages is not None:
+                    existing_prefs.languages = languages
+                if min_duration is not None:
+                    existing_prefs.min_duration = min_duration
+                if max_duration is not None:
+                    existing_prefs.max_duration = max_duration
+                
+                return self.update(existing_prefs)
+            else:
+                # Create new preferences
+                new_prefs = UserPreferences(
+                    id=0,
+                    user_id=user_id,
+                    genres=genres if genres is not None else [],
+                    topics=topics if topics is not None else [],
+                    languages=languages if languages is not None else [],
+                    min_duration=min_duration,
+                    max_duration=max_duration
+                )
+                return self.create(new_prefs)
+                
+        except Exception as e:
+            raise Exception(f"Error updating user preferences: {str(e)}")
+    
     def delete(self, preferences_id: int) -> bool:
         """Delete user preferences"""
         try:

@@ -71,66 +71,26 @@
       </div>
     </div>
 
-    <!-- Analysis -->
+    <!-- Estadísticas simples de análisis -->
     <div class="card">
       <h3>📈 Análisis de Tendencias</h3>
-      <div class="analysis-controls">
-        <div class="form-group">
-          <label class="form-label">Días hacia atrás</label>
-          <input 
-            v-model="analysisFilters.days_back" 
-            type="number" 
-            class="form-input" 
-            :class="{ 'error': errors.days_back }"
-            min="1" 
-            max="30"
-            @blur="validateDaysBack"
-            @input="clearError('days_back')"
-            required
-          >
-          <span v-if="errors.days_back" class="error-message">{{ errors.days_back }}</span>
-        </div>
-        <button @click="loadAnalysis" class="btn btn-secondary" :disabled="loadingAnalysis || errors.days_back">
-          {{ loadingAnalysis ? 'Analizando...' : 'Obtener Análisis' }}
-        </button>
-      </div>
-
-      <div v-if="analysis" class="analysis-results">
+      <div v-if="stats" class="analysis-results">
         <div class="stats-grid">
           <div class="stat-card">
             <h4>📊 Total de Videos</h4>
-            <p class="stat-number">{{ analysis.total_videos }}</p>
+            <p class="stat-number">{{ stats.total_videos }}</p>
           </div>
           <div class="stat-card">
             <h4>👀 Total de Vistas</h4>
-            <p class="stat-number">{{ formatNumber(analysis.total_views) }}</p>
+            <p class="stat-number">{{ formatNumber(stats.total_views) }}</p>
           </div>
           <div class="stat-card">
             <h4>📈 Promedio de Vistas</h4>
-            <p class="stat-number">{{ formatNumber(analysis.avg_views) }}</p>
-          </div>
-        </div>
-
-        <div v-if="analysis.top_categories" class="analysis-section">
-          <h4>🏆 Categorías Más Populares</h4>
-          <div class="categories-list">
-            <div v-for="category in analysis.top_categories" :key="category.category_id" class="category-item">
-              <span class="category-name">{{ category.name }}</span>
-              <span class="category-count">{{ category.count }} videos</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="analysis.top_channels" class="analysis-section">
-          <h4>🎬 Canales Más Populares</h4>
-          <div class="channels-list">
-            <div v-for="channel in analysis.top_channels" :key="channel.channel" class="channel-item">
-              <span class="channel-name">{{ channel.channel }}</span>
-              <span class="channel-stats">{{ channel.videos }} videos, {{ formatNumber(channel.total_views) }} vistas</span>
-            </div>
+            <p class="stat-number">{{ formatNumber(stats.avg_views) }}</p>
           </div>
         </div>
       </div>
+      <div v-else class="empty-message">No hay datos de tendencias para analizar.</div>
     </div>
 
     <!-- Loading State -->
@@ -141,22 +101,18 @@
 </template>
 
 <script>
-import { apiService } from '../services/api'
+import { trendsService, favoritesService } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'Trends',
   data() {
     return {
       loading: false,
-      loadingAnalysis: false,
       trends: [],
-      analysis: null,
       filters: {
         region_code: 'US',
         max_results: 10
-      },
-      analysisFilters: {
-        days_back: 7
       },
       categories: {
         1: 'Film & Animation',
@@ -176,14 +132,20 @@ export default {
         29: 'Nonprofits & Activism'
       },
       errors: {
-        max_results: '',
-        days_back: ''
+        max_results: ''
       }
     }
   },
   computed: {
     hasErrors() {
       return Object.values(this.errors).some(error => error !== '');
+    },
+    stats() {
+      if (!this.trends.length) return null;
+      const total_videos = this.trends.length;
+      const total_views = this.trends.reduce((sum, v) => sum + (v.view_count || 0), 0);
+      const avg_views = total_videos ? Math.round(total_views / total_videos) : 0;
+      return { total_videos, total_views, avg_views };
     }
   },
   mounted() {
@@ -191,10 +153,12 @@ export default {
   },
   methods: {
     async loadTrends() {
+      const authStore = useAuthStore()
+      if (!authStore.user) return
       this.loading = true
       try {
-        const response = await apiService.getTrends(this.filters)
-        this.trends = response.data.trends || []
+        const response = await trendsService.getTrends(this.filters.region_code, this.filters.max_results)
+        this.trends = response.trends || []
       } catch (err) {
         console.error('Error loading trends:', err)
         this.trends = []
@@ -202,30 +166,9 @@ export default {
         this.loading = false
       }
     },
-
-    async loadAnalysis() {
-      this.loadingAnalysis = true
-      try {
-        const response = await apiService.getTrendAnalysis({
-          ...this.filters,
-          ...this.analysisFilters
-        })
-        this.analysis = response.data.analysis
-      } catch (err) {
-        console.error('Error loading analysis:', err)
-        this.analysis = null
-      } finally {
-        this.loadingAnalysis = false
-      }
-    },
-
     async addToFavorites(trend) {
-      const userId = prompt('Ingresa el ID del usuario:')
-      if (!userId) return
-
       try {
-        const favoriteData = {
-          user_id: parseInt(userId),
+        await favoritesService.addFavorite({
           video_id: trend.video_id,
           title: trend.title,
           description: trend.description || '',
@@ -234,24 +177,19 @@ export default {
           channel: trend.channel_title,
           duration: '',
           published_at: trend.published_at
-        }
-        
-        await apiService.addFavorite(favoriteData)
+        })
         alert('Video agregado a favoritos exitosamente!')
       } catch (err) {
         alert('Error al agregar a favoritos: ' + (err.response?.data?.message || err.message))
       }
     },
-
     getCategoryName(categoryId) {
       return this.categories[categoryId] || 'Sin categoría'
     },
-
     formatNumber(num) {
       if (!num) return '0'
       return new Intl.NumberFormat('es-ES').format(num)
     },
-
     formatDate(dateString) {
       return new Date(dateString).toLocaleDateString('es-ES', {
         year: 'numeric',
@@ -259,7 +197,6 @@ export default {
         day: 'numeric'
       })
     },
-
     validateMaxResults() {
       if (this.filters.max_results < 1 || this.filters.max_results > 50) {
         this.errors.max_results = 'El máximo de resultados debe ser entre 1 y 50.';
@@ -267,15 +204,6 @@ export default {
         this.errors.max_results = '';
       }
     },
-
-    validateDaysBack() {
-      if (this.analysisFilters.days_back < 1 || this.analysisFilters.days_back > 30) {
-        this.errors.days_back = 'Los días hacia atrás deben ser entre 1 y 30.';
-      } else {
-        this.errors.days_back = '';
-      }
-    },
-
     clearError(field) {
       this.errors[field] = '';
     }

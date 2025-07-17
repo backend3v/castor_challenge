@@ -97,6 +97,23 @@ class MySQLViewHistoryRepository(ViewHistoryRepository):
             if connection:
                 connection.close()
     
+    def record_view(self, user_id: int, video_id: str, title: str = '', 
+                   view_duration: int = 0, completed: bool = False) -> ViewHistory:
+        """Record a video view for a user"""
+        try:
+            history = ViewHistory(
+                id=0,
+                user_id=user_id,
+                video_id=video_id,
+                title=title,
+                viewed_at=datetime.now(),
+                view_duration=view_duration,
+                completed=completed
+            )
+            return self.create(history)
+        except Exception as e:
+            raise Exception(f"Error recording view: {str(e)}")
+    
     def _map_to_view_history(self, row: dict) -> ViewHistory:
         """Map database row to ViewHistory object"""
         return ViewHistory(

@@ -1,264 +1,35 @@
 <template>
   <div class="recommendations">
     <div class="page-header">
-      <h1>🎯 Recomendaciones</h1>
-      <p>Sistema de recomendaciones personalizadas</p>
+      <h1 class="recommendations-title">🎯 Recomendaciones</h1>
+      <p class="recommendations-subtitle">Videos recomendados para ti</p>
     </div>
-
-    <!-- User Selection -->
-    <div class="card">
-      <h3>👤 Seleccionar Usuario</h3>
-      <div class="user-selection">
-        <div class="form-group">
-          <label class="form-label">ID de Usuario</label>
-          <input 
-            v-model="selectedUserId" 
-            type="number" 
-            class="form-input" 
-            :class="{ 'error': errors.selectedUserId }"
-            placeholder="1"
-            @blur="validateSelectedUserId"
-            @input="clearError('selectedUserId')"
-            min="1"
-            required
-          >
-          <span v-if="errors.selectedUserId" class="error-message">{{ errors.selectedUserId }}</span>
-        </div>
-        <button @click="loadRecommendations" class="btn btn-primary" :disabled="loading || errors.selectedUserId">
-          {{ loading ? 'Cargando...' : 'Obtener Recomendaciones' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Preferences Management -->
-    <div class="card">
-      <h3>⚙️ Gestión de Preferencias</h3>
-      <div class="preferences-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">Categorías Preferidas (IDs separados por comas)</label>
-            <input 
-              v-model="preferences.preferred_categories" 
-              type="text" 
-              class="form-input" 
-              :class="{ 'error': errors.preferred_categories }"
-              placeholder="20,24,28"
-              @blur="validateCategories"
-              @input="clearError('preferred_categories')"
-              maxlength="100"
-            >
-            <span v-if="errors.preferred_categories" class="error-message">{{ errors.preferred_categories }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Canales Preferidos (separados por comas)</label>
-            <input 
-              v-model="preferences.preferred_channels" 
-              type="text" 
-              class="form-input" 
-              :class="{ 'error': errors.preferred_channels }"
-              placeholder="channel1,channel2"
-              @blur="validateChannels"
-              @input="clearError('preferred_channels')"
-              maxlength="200"
-            >
-            <span v-if="errors.preferred_channels" class="error-message">{{ errors.preferred_channels }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Duración Máxima (minutos)</label>
-            <input 
-              v-model="preferences.max_duration_minutes" 
-              type="number" 
-              class="form-input" 
-              :class="{ 'error': errors.max_duration_minutes }"
-              placeholder="30"
-              @blur="validateMaxDuration"
-              @input="clearError('max_duration_minutes')"
-              min="1"
-              max="480"
-            >
-            <span v-if="errors.max_duration_minutes" class="error-message">{{ errors.max_duration_minutes }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Idioma</label>
-            <select v-model="preferences.language" class="form-input">
-              <option value="es">Español</option>
-              <option value="en">Inglés</option>
-              <option value="fr">Francés</option>
-            </select>
-          </div>
-        </div>
-        <button @click="updatePreferences" class="btn btn-secondary" :disabled="updatingPreferences || hasErrors">
-          {{ updatingPreferences ? 'Actualizando...' : 'Actualizar Preferencias' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Recommendations List -->
-    <div v-if="recommendations.length > 0" class="card">
-      <h3>🎯 Recomendaciones Personalizadas</h3>
-      <div class="recommendations-grid">
+    <div v-if="error" class="error-message">{{ error }}</div>
+    <div v-if="loading" class="loading">Cargando recomendaciones...</div>
+    <div v-else>
+      <div v-if="recommendations.length === 0" class="empty-message">No hay recomendaciones disponibles.</div>
+      <div v-else class="recommendations-list">
         <div v-for="rec in recommendations" :key="rec.id" class="recommendation-item">
-          <div class="recommendation-header">
-            <h4>{{ rec.title }}</h4>
-            <span class="score">Score: {{ (rec.score * 100).toFixed(1) }}%</span>
-          </div>
-          <div class="recommendation-content">
-            <img v-if="rec.thumbnail_url" :src="rec.thumbnail_url" :alt="rec.title" class="rec-thumbnail">
-            <div class="rec-details">
-              <p><strong>Canal:</strong> {{ rec.channel_title }}</p>
-              <p><strong>Publicado:</strong> {{ formatDate(rec.published_at) }}</p>
-              <p><strong>Razón:</strong> {{ rec.reason }}</p>
-            </div>
-          </div>
-          <div class="recommendation-actions">
-            <a :href="`https://youtube.com/watch?v=${rec.video_id}`" target="_blank" class="btn btn-secondary btn-sm">
-              📺 Ver en YouTube
-            </a>
-            <button @click="recordView(rec)" class="btn btn-primary btn-sm">
-              👁️ Marcar como Visto
-            </button>
-          </div>
+          <h3 class="recommendation-title">{{ rec.title }}</h3>
+          <p>{{ rec.description }}</p>
+          <a :href="rec.url" target="_blank">Ver en YouTube</a>
         </div>
       </div>
-    </div>
-
-    <!-- Record View -->
-    <div class="card">
-      <h3>📝 Registrar Visualización</h3>
-      <div class="view-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">ID de Usuario</label>
-            <input 
-              v-model="viewData.user_id" 
-              type="number" 
-              class="form-input" 
-              :class="{ 'error': errors.viewUserId }"
-              placeholder="1"
-              @blur="validateViewUserId"
-              @input="clearError('viewUserId')"
-              min="1"
-              required
-            >
-            <span v-if="errors.viewUserId" class="error-message">{{ errors.viewUserId }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">ID del Video</label>
-            <input 
-              v-model="viewData.video_id" 
-              type="text" 
-              class="form-input" 
-              :class="{ 'error': errors.viewVideoId }"
-              placeholder="dQw4w9WgXcQ"
-              @blur="validateViewVideoId"
-              @input="clearError('viewVideoId')"
-              maxlength="20"
-              required
-            >
-            <span v-if="errors.viewVideoId" class="error-message">{{ errors.viewVideoId }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Título del Video</label>
-            <input 
-              v-model="viewData.title" 
-              type="text" 
-              class="form-input" 
-              :class="{ 'error': errors.viewTitle }"
-              placeholder="Título del video"
-              @blur="validateViewTitle"
-              @input="clearError('viewTitle')"
-              maxlength="200"
-              required
-            >
-            <span v-if="errors.viewTitle" class="error-message">{{ errors.viewTitle }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Duración de Visualización (segundos)</label>
-            <input 
-              v-model="viewData.watch_duration_seconds" 
-              type="number" 
-              class="form-input" 
-              :class="{ 'error': errors.watchDuration }"
-              placeholder="300"
-              @blur="validateWatchDuration"
-              @input="clearError('watchDuration')"
-              min="0"
-              max="86400"
-              required
-            >
-            <span v-if="errors.watchDuration" class="error-message">{{ errors.watchDuration }}</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">¿Completado?</label>
-            <select v-model="viewData.completed" class="form-input">
-              <option :value="true">Sí</option>
-              <option :value="false">No</option>
-            </select>
-          </div>
-        </div>
-        <button @click="recordViewData" class="btn btn-primary" :disabled="recordingView || hasViewErrors">
-          {{ recordingView ? 'Registrando...' : 'Registrar Visualización' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-if="!loading && recommendations.length === 0" class="card empty-state">
-      <h3>📭 No hay recomendaciones</h3>
-      <p>Configura tus preferencias y obtén recomendaciones personalizadas.</p>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading">
-      Generando recomendaciones...
     </div>
   </div>
 </template>
 
 <script>
-import { apiService } from '../services/api'
+import { recommendationsService } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'Recommendations',
   data() {
     return {
       loading: false,
-      updatingPreferences: false,
-      recordingView: false,
-      selectedUserId: 1,
       recommendations: [],
-      preferences: {
-        user_id: 1,
-        preferred_categories: '',
-        preferred_channels: '',
-        max_duration_minutes: 30,
-        language: 'es'
-      },
-      viewData: {
-        user_id: 1,
-        video_id: '',
-        title: '',
-        watch_duration_seconds: 300,
-        completed: true
-      },
-      errors: {
-        selectedUserId: '',
-        preferred_categories: '',
-        preferred_channels: '',
-        max_duration_minutes: '',
-        viewUserId: '',
-        viewVideoId: '',
-        viewTitle: '',
-        watchDuration: ''
-      }
-    }
-  },
-  computed: {
-    hasErrors() {
-      return Object.values(this.errors).some(error => error !== '');
-    },
-    hasViewErrors() {
-      return Object.values(this.errors).some(error => error !== '' && error.startsWith('view'));
+      error: ''
     }
   },
   mounted() {
@@ -266,152 +37,16 @@ export default {
   },
   methods: {
     async loadRecommendations() {
-      if (!this.selectedUserId) return
-      
       this.loading = true
       try {
-        const response = await apiService.getRecommendations(this.selectedUserId, { max_results: 10 })
-        this.recommendations = response.data.recommendations || []
+        const response = await recommendationsService.getRecommendations()
+        this.recommendations = response.recommendations || []
       } catch (err) {
-        console.error('Error loading recommendations:', err)
+        this.error = 'Error al cargar recomendaciones.'
         this.recommendations = []
       } finally {
         this.loading = false
       }
-    },
-
-    async updatePreferences() {
-      if (!this.preferences.user_id) {
-        alert('Por favor ingresa un ID de usuario')
-        return
-      }
-
-      this.updatingPreferences = true
-      try {
-        const preferencesData = {
-          ...this.preferences,
-          preferred_categories: this.preferences.preferred_categories ? 
-            this.preferences.preferred_categories.split(',').map(id => parseInt(id.trim())) : [],
-          preferred_channels: this.preferences.preferred_channels ? 
-            this.preferences.preferred_channels.split(',').map(channel => channel.trim()) : []
-        }
-        
-        await apiService.updatePreferences(preferencesData)
-        alert('Preferencias actualizadas exitosamente!')
-        this.loadRecommendations()
-      } catch (err) {
-        alert('Error al actualizar preferencias: ' + (err.response?.data?.message || err.message))
-      } finally {
-        this.updatingPreferences = false
-      }
-    },
-
-    async recordView(recommendation) {
-      const viewData = {
-        user_id: this.selectedUserId,
-        video_id: recommendation.video_id,
-        title: recommendation.title,
-        watch_duration_seconds: 300,
-        completed: true
-      }
-      
-      try {
-        await apiService.recordView(viewData)
-        alert('Visualización registrada exitosamente!')
-      } catch (err) {
-        alert('Error al registrar visualización: ' + (err.response?.data?.message || err.message))
-      }
-    },
-
-    async recordViewData() {
-      if (!this.viewData.user_id || !this.viewData.video_id || !this.viewData.title) {
-        alert('Por favor completa todos los campos obligatorios')
-        return
-      }
-
-      this.recordingView = true
-      try {
-        await apiService.recordView(this.viewData)
-        alert('Visualización registrada exitosamente!')
-        this.viewData = {
-          user_id: this.selectedUserId,
-          video_id: '',
-          title: '',
-          watch_duration_seconds: 300,
-          completed: true
-        }
-      } catch (err) {
-        alert('Error al registrar visualización: ' + (err.response?.data?.message || err.message))
-      } finally {
-        this.recordingView = false
-      }
-    },
-
-    formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
-    },
-    validateSelectedUserId() {
-      if (!this.selectedUserId) {
-        this.errors.selectedUserId = 'El ID de usuario es obligatorio.';
-      } else {
-        this.errors.selectedUserId = '';
-      }
-    },
-    validateCategories() {
-      if (!this.preferences.preferred_categories) {
-        this.errors.preferred_categories = 'Las categorías son obligatorias.';
-      } else {
-        this.errors.preferred_categories = '';
-      }
-    },
-    validateChannels() {
-      if (!this.preferences.preferred_channels) {
-        this.errors.preferred_channels = 'Los canales son obligatorios.';
-      } else {
-        this.errors.preferred_channels = '';
-      }
-    },
-    validateMaxDuration() {
-      if (!this.preferences.max_duration_minutes) {
-        this.errors.max_duration_minutes = 'La duración máxima es obligatoria.';
-      } else {
-        this.errors.max_duration_minutes = '';
-      }
-    },
-    validateViewUserId() {
-      if (!this.viewData.user_id) {
-        this.errors.viewUserId = 'El ID de usuario es obligatorio.';
-      } else {
-        this.errors.viewUserId = '';
-      }
-    },
-    validateViewVideoId() {
-      if (!this.viewData.video_id) {
-        this.errors.viewVideoId = 'El ID del video es obligatorio.';
-      } else {
-        this.errors.viewVideoId = '';
-      }
-    },
-    validateViewTitle() {
-      if (!this.viewData.title) {
-        this.errors.viewTitle = 'El título del video es obligatorio.';
-      } else {
-        this.errors.viewTitle = '';
-      }
-    },
-    validateWatchDuration() {
-      if (!this.viewData.watch_duration_seconds) {
-        this.errors.watchDuration = 'La duración de visualización es obligatoria.';
-      } else {
-        this.errors.watchDuration = '';
-      }
-    },
-    clearError(field) {
-      this.errors[field] = '';
     }
   }
 }
@@ -422,17 +57,21 @@ export default {
   text-align: center;
   margin-bottom: 2rem;
 }
-
-.page-header h1 {
+.recommendations-title {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   color: #495057;
   font-weight: bold;
 }
-
-.page-header p {
+.recommendations-subtitle {
   color: #6c757d;
   font-size: 1.1rem;
+}
+.recommendation-title {
+  font-weight: bold;
+  color: #495057;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
 }
 
 .user-selection {

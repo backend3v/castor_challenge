@@ -7,8 +7,52 @@ class User:
     id: int
     name: str
     email: str
-    created_at: datetime
-    active: bool = True
+    password_hash: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    last_login: Optional[datetime] = None
+    is_active: bool = True
+    active: bool = True  # For backward compatibility
+    email_verified: bool = False
+    verification_token: Optional[str] = None
+    reset_token: Optional[str] = None
+    reset_token_expires: Optional[datetime] = None
+
+@dataclass
+class UserSession:
+    id: int
+    user_id: int
+    token_hash: str
+    expires_at: datetime
+    created_at: datetime = field(default_factory=datetime.now)
+    last_activity: datetime = field(default_factory=datetime.now)
+    is_active: bool = True
+
+@dataclass
+class RefreshToken:
+    id: int
+    user_id: int
+    token_hash: str
+    expires_at: datetime
+    created_at: datetime = field(default_factory=datetime.now)
+    is_revoked: bool = False
+
+@dataclass
+class UserRole:
+    id: int
+    user_id: int
+    role_name: str = "user"
+    created_at: datetime = field(default_factory=datetime.now)
+
+@dataclass
+class AuthAuditLog:
+    id: int
+    user_id: Optional[int]
+    action: str
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    success: bool = True
+    details: Optional[Dict[str, Any]] = None
+    created_at: datetime = field(default_factory=datetime.now)
 
 @dataclass
 class FavoriteVideo:

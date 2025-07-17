@@ -37,6 +37,31 @@ class TrendAnalysisUseCase:
         
         return self.analysis_repo.create(analysis)
     
+    def create_analysis(self, user_id: int, category: str, region: str, videos: List[Dict[str, Any]]) -> TrendAnalysis:
+        """Create analysis from existing videos data"""
+        # Calculate statistics
+        statistics = self._calculate_statistics(videos)
+        
+        # Create analysis object
+        analysis = TrendAnalysis(
+            id=0,  # Will be set by database
+            user_id=user_id,
+            category=category,
+            region=region,
+            analyzed_at=datetime.now(),
+            results={
+                'videos': videos,
+                'statistics': statistics,
+                'total_videos': len(videos)
+            },
+            criteria={
+                'region': region,
+                'category': category
+            }
+        )
+        
+        return self.analysis_repo.create(analysis)
+    
     def list_user_analyses(self, user_id: int) -> List[TrendAnalysis]:
         """List all trend analyses for a user"""
         return self.analysis_repo.get_by_user(user_id)

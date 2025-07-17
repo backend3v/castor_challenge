@@ -68,22 +68,9 @@ fi
 
 # Verify database and tables
 print_status "Verifying database setup..."
-docker exec castor_mysql mysql -u root -prootpassword -e "USE castor_db; SHOW TABLES;" 2>/dev/null
-
+docker exec castor_mysql mysql -u castor_user -pcastor_password -e "USE castor_db; SHOW TABLES;"
 if [ $? -eq 0 ]; then
     print_status "Database setup completed successfully!"
-    echo ""
-    echo "📊 Database Information:"
-    echo "   Host: localhost"
-    echo "   Port: 3306"
-    echo "   Database: castor_db"
-    echo "   User: castor_user"
-    echo "   Password: castor_password"
-    echo "   Root Password: rootpassword"
-    echo ""
-    echo "🔗 Connection string: mysql://castor_user:castor_password@localhost:3306/castor_db"
-    echo ""
-    print_status "You can now start the backend application!"
 else
     print_error "Database setup failed"
     exit 1

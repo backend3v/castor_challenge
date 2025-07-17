@@ -1,259 +1,36 @@
 <template>
   <div class="favorites">
     <div class="page-header">
-      <h1>❤️ Mis Favoritos</h1>
-      <p>Gestiona tus videos favoritos de YouTube</p>
+      <h1 class="favorites-title">❤️ Favoritos</h1>
+      <p class="favorites-subtitle">Lista de tus videos favoritos</p>
     </div>
-
-    <!-- Add Favorite Form -->
-    <div class="card">
-      <h3>➕ Agregar Video Favorito</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">ID de Usuario</label>
-          <input 
-            v-model="newFavorite.user_id" 
-            type="number" 
-            class="form-input" 
-            :class="{ 'error': errors.user_id }"
-            placeholder="1"
-            @blur="validateUserId"
-            @input="clearError('user_id')"
-            min="1"
-            required
-          >
-          <span v-if="errors.user_id" class="error-message">{{ errors.user_id }}</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">ID del Video (YouTube)</label>
-          <input 
-            v-model="newFavorite.video_id" 
-            type="text" 
-            class="form-input" 
-            :class="{ 'error': errors.video_id }"
-            placeholder="dQw4w9WgXcQ"
-            @blur="validateVideoId"
-            @input="clearError('video_id')"
-            maxlength="20"
-            required
-          >
-          <span v-if="errors.video_id" class="error-message">{{ errors.video_id }}</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Título</label>
-          <input 
-            v-model="newFavorite.title" 
-            type="text" 
-            class="form-input" 
-            :class="{ 'error': errors.title }"
-            placeholder="Título del video"
-            @blur="validateTitle"
-            @input="clearError('title')"
-            maxlength="200"
-            required
-          >
-          <span v-if="errors.title" class="error-message">{{ errors.title }}</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Descripción</label>
-          <textarea 
-            v-model="newFavorite.description" 
-            class="form-input" 
-            placeholder="Descripción del video"
-            maxlength="5000"
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">URL</label>
-          <input 
-            v-model="newFavorite.url" 
-            type="url" 
-            class="form-input" 
-            :class="{ 'error': errors.url }"
-            placeholder="https://youtube.com/watch?v=..."
-            @blur="validateUrl"
-            @input="clearError('url')"
-            maxlength="500"
-          >
-          <span v-if="errors.url" class="error-message">{{ errors.url }}</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Thumbnail</label>
-          <input 
-            v-model="newFavorite.thumbnail" 
-            type="url" 
-            class="form-input" 
-            :class="{ 'error': errors.thumbnail }"
-            placeholder="https://..."
-            @blur="validateThumbnail"
-            @input="clearError('thumbnail')"
-            maxlength="500"
-          >
-          <span v-if="errors.thumbnail" class="error-message">{{ errors.thumbnail }}</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Canal</label>
-          <input 
-            v-model="newFavorite.channel" 
-            type="text" 
-            class="form-input" 
-            placeholder="Nombre del canal"
-            maxlength="100"
-          >
-        </div>
-        <div class="form-group">
-          <label class="form-label">Duración</label>
-          <input 
-            v-model="newFavorite.duration" 
-            type="text" 
-            class="form-input" 
-            :class="{ 'error': errors.duration }"
-            placeholder="10:30"
-            @blur="validateDuration"
-            @input="clearError('duration')"
-            maxlength="10"
-          >
-          <span v-if="errors.duration" class="error-message">{{ errors.duration }}</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Fecha de Publicación</label>
-          <input 
-            v-model="newFavorite.published_at" 
-            type="datetime-local" 
-            class="form-input"
-          >
-        </div>
-        <div class="form-group">
-          <label class="form-label">Notas</label>
-          <textarea 
-            v-model="newFavorite.notes" 
-            class="form-input" 
-            placeholder="Notas personales"
-            maxlength="1000"
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Etiquetas (separadas por comas)</label>
-          <input 
-            v-model="newFavorite.tags" 
-            type="text" 
-            class="form-input" 
-            placeholder="música, entretenimiento, tutorial"
-            maxlength="500"
-          >
+    <div v-if="error" class="error-message">{{ error }}</div>
+    <div v-if="loading" class="loading">Cargando favoritos...</div>
+    <div v-else>
+      <div v-if="favorites.length === 0" class="empty-message">No tienes videos favoritos aún.</div>
+      <div v-else class="favorites-list">
+        <div v-for="fav in favorites" :key="fav.id" class="favorite-item">
+          <h3 class="favorite-title">{{ fav.title }}</h3>
+          <p>{{ fav.description }}</p>
+          <a :href="fav.url" target="_blank">Ver en YouTube</a>
+          <button @click="removeFavorite(fav.video_id)" class="btn btn-danger btn-sm">Eliminar</button>
         </div>
       </div>
-      <button @click="addFavorite" class="btn btn-primary" :disabled="addingFavorite || hasErrors">
-        {{ addingFavorite ? 'Agregando...' : 'Agregar a Favoritos' }}
-      </button>
-    </div>
-
-    <!-- User Selection -->
-    <div class="card">
-      <h3>👤 Seleccionar Usuario</h3>
-      <div class="user-selection">
-        <div class="form-group">
-          <label class="form-label">ID de Usuario</label>
-          <input 
-            v-model="selectedUserId" 
-            type="number" 
-            class="form-input" 
-            :class="{ 'error': errors.selectedUserId }"
-            placeholder="1"
-            @blur="validateSelectedUserId"
-            @input="clearError('selectedUserId')"
-            min="1"
-            required
-          >
-          <span v-if="errors.selectedUserId" class="error-message">{{ errors.selectedUserId }}</span>
-        </div>
-        <button @click="loadFavorites" class="btn btn-secondary" :disabled="loading || errors.selectedUserId">
-          {{ loading ? 'Cargando...' : 'Cargar Favoritos' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Favorites List -->
-    <div v-if="favorites.length > 0" class="card">
-      <h3>📋 Lista de Favoritos</h3>
-      <div class="favorites-grid">
-        <div v-for="favorite in favorites" :key="favorite.id" class="favorite-item">
-          <div class="favorite-header">
-            <h4>{{ favorite.title }}</h4>
-            <button @click="removeFavorite(favorite.user_id, favorite.video_id)" class="btn btn-danger btn-sm">
-              🗑️ Eliminar
-            </button>
-          </div>
-          <div class="favorite-content">
-            <img v-if="favorite.thumbnail" :src="favorite.thumbnail" :alt="favorite.title" class="favorite-thumbnail">
-            <div class="favorite-details">
-              <p><strong>Canal:</strong> {{ favorite.channel }}</p>
-              <p><strong>Duración:</strong> {{ favorite.duration }}</p>
-              <p><strong>Agregado:</strong> {{ formatDate(favorite.added_at) }}</p>
-              <p v-if="favorite.notes"><strong>Notas:</strong> {{ favorite.notes }}</p>
-              <div v-if="favorite.tags && favorite.tags.length > 0" class="tags">
-                <span v-for="tag in favorite.tags" :key="tag" class="tag">{{ tag }}</span>
-              </div>
-            </div>
-          </div>
-          <a :href="favorite.url" target="_blank" class="btn btn-secondary btn-sm">
-            📺 Ver en YouTube
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="!loading" class="card empty-state">
-      <h3>📭 No hay favoritos</h3>
-      <p>Agrega algunos videos a tus favoritos para verlos aquí.</p>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading">
-      Cargando favoritos...
     </div>
   </div>
 </template>
 
 <script>
-import { apiService } from '../services/api'
+import { favoritesService } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'Favorites',
   data() {
     return {
       loading: false,
-      addingFavorite: false,
-      selectedUserId: 1,
       favorites: [],
-      newFavorite: {
-        user_id: 1,
-        video_id: '',
-        title: '',
-        description: '',
-        url: '',
-        thumbnail: '',
-        channel: '',
-        duration: '',
-        published_at: '',
-        notes: '',
-        tags: ''
-      },
-      errors: {
-        user_id: '',
-        video_id: '',
-        title: '',
-        url: '',
-        thumbnail: '',
-        duration: '',
-        selectedUserId: ''
-      }
-    }
-  },
-  computed: {
-    hasErrors() {
-      return Object.values(this.errors).some(error => error !== '');
+      error: ''
     }
   },
   mounted() {
@@ -261,149 +38,24 @@ export default {
   },
   methods: {
     async loadFavorites() {
-      if (!this.selectedUserId) return
-      
       this.loading = true
       try {
-        const response = await apiService.getFavorites(this.selectedUserId)
-        this.favorites = response.data.favorites || []
+        const response = await favoritesService.getFavorites()
+        this.favorites = response.favorites || []
       } catch (err) {
-        console.error('Error loading favorites:', err)
+        this.error = 'Error al cargar favoritos.'
         this.favorites = []
       } finally {
         this.loading = false
       }
     },
-
-    async addFavorite() {
-      if (!this.newFavorite.video_id || !this.newFavorite.title) {
-        alert('Por favor completa al menos el ID del video y el título')
-        return
-      }
-
-      this.addingFavorite = true
+    async removeFavorite(videoId) {
       try {
-        const favoriteData = {
-          ...this.newFavorite,
-          tags: this.newFavorite.tags ? this.newFavorite.tags.split(',').map(tag => tag.trim()) : []
-        }
-        
-        await apiService.addFavorite(favoriteData)
-        alert('Video agregado a favoritos exitosamente!')
-        this.resetForm()
+        await favoritesService.removeFavorite(videoId)
         this.loadFavorites()
       } catch (err) {
-        alert('Error al agregar favorito: ' + (err.response?.data?.message || err.message))
-      } finally {
-        this.addingFavorite = false
+        alert('Error al eliminar favorito')
       }
-    },
-
-    async removeFavorite(userId, videoId) {
-      if (!confirm('¿Estás seguro de que quieres eliminar este favorito?')) return
-
-      try {
-        await apiService.removeFavorite(userId, videoId)
-        alert('Favorito eliminado exitosamente!')
-        this.loadFavorites()
-      } catch (err) {
-        alert('Error al eliminar favorito: ' + (err.response?.data?.message || err.message))
-      }
-    },
-
-    resetForm() {
-      this.newFavorite = {
-        user_id: this.selectedUserId,
-        video_id: '',
-        title: '',
-        description: '',
-        url: '',
-        thumbnail: '',
-        channel: '',
-        duration: '',
-        published_at: '',
-        notes: '',
-        tags: ''
-      }
-      this.errors = {
-        user_id: '',
-        video_id: '',
-        title: '',
-        url: '',
-        thumbnail: '',
-        duration: '',
-        selectedUserId: ''
-      }
-    },
-
-    formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    },
-
-    validateUserId() {
-      if (!this.newFavorite.user_id) {
-        this.errors.user_id = 'El ID de usuario es requerido.';
-      } else {
-        this.errors.user_id = '';
-      }
-    },
-
-    validateVideoId() {
-      if (!this.newFavorite.video_id) {
-        this.errors.video_id = 'El ID del video es requerido.';
-      } else {
-        this.errors.video_id = '';
-      }
-    },
-
-    validateTitle() {
-      if (!this.newFavorite.title) {
-        this.errors.title = 'El título es requerido.';
-      } else {
-        this.errors.title = '';
-      }
-    },
-
-    validateUrl() {
-      if (!this.newFavorite.url) {
-        this.errors.url = 'La URL es requerida.';
-      } else {
-        this.errors.url = '';
-      }
-    },
-
-    validateThumbnail() {
-      if (!this.newFavorite.thumbnail) {
-        this.errors.thumbnail = 'La URL de la miniatura es requerida.';
-      } else {
-        this.errors.thumbnail = '';
-      }
-    },
-
-    validateDuration() {
-      if (!this.newFavorite.duration) {
-        this.errors.duration = 'La duración es requerida.';
-      } else {
-        this.errors.duration = '';
-      }
-    },
-
-    validateSelectedUserId() {
-      if (!this.selectedUserId) {
-        this.errors.selectedUserId = 'El ID de usuario es requerido.';
-      } else {
-        this.errors.selectedUserId = '';
-      }
-    },
-
-    clearError(field) {
-      this.errors[field] = '';
     }
   }
 }
@@ -414,17 +66,21 @@ export default {
   text-align: center;
   margin-bottom: 2rem;
 }
-
-.page-header h1 {
+.favorites-title {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   color: #495057;
   font-weight: bold;
 }
-
-.page-header p {
+.favorites-subtitle {
   color: #6c757d;
   font-size: 1.1rem;
+}
+.favorite-title {
+  font-weight: bold;
+  color: #495057;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
 }
 
 .form-grid {

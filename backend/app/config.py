@@ -13,4 +13,9 @@ class Config:
     EXTERNAL_API_KEY = os.getenv('EXTERNAL_API_KEY')
     
     # YouTube API configuration
-    YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY') 
+    YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
+    
+    # JWT Configuration
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600))  # 1 hour in seconds
+    JWT_REFRESH_TOKEN_EXPIRES = int(os.getenv('JWT_REFRESH_TOKEN_EXPIRES', 604800))  # 7 days in seconds 

@@ -15,8 +15,11 @@
         <h3>2. Crear un Usuario</h3>
         <p>Ve a la sección "Usuarios" y crea un nuevo usuario para comenzar a usar las funcionalidades.</p>
         
-        <h3>3. Explorar Funcionalidades</h3>
-        <p>Navega por las diferentes secciones usando el menú superior.</p>
+        <h3>3. Iniciar Sesión</h3>
+        <p>Inicia sesión con tu usuario registrado. Todas las funcionalidades requieren estar autenticado.</p>
+        
+        <h3>4. Explorar Funcionalidades</h3>
+        <p>Navega por las diferentes secciones usando el menú superior. El sistema utiliza automáticamente tu usuario autenticado para todas las acciones, no es necesario ingresar el ID manualmente.</p>
       </div>
     </div>
 
@@ -34,7 +37,6 @@
             <h4>¿Cómo usar?</h4>
             <ol>
               <li>Ve a la sección "Favoritos"</li>
-              <li>Ingresa el ID del usuario (ej: 1)</li>
               <li>Completa el formulario con los datos del video</li>
               <li>Haz clic en "Agregar a Favoritos"</li>
               <li>Para ver tus favoritos, haz clic en "Cargar Favoritos"</li>
@@ -79,12 +81,11 @@
           <h3>🎯 Sistema de Recomendaciones</h3>
           <div class="feature-content">
             <h4>¿Qué hace?</h4>
-            <p>Proporciona recomendaciones personalizadas basadas en tus preferencias y historial.</p>
+            <p>Proporciona recomendaciones personalizadas basadas en tus favoritos. Si no tienes favoritos, la lista estará vacía.</p>
             
             <h4>¿Cómo usar?</h4>
             <ol>
               <li>Ve a la sección "Recomendaciones"</li>
-              <li>Ingresa el ID del usuario</li>
               <li>Configura tus preferencias (categorías, canales, duración)</li>
               <li>Haz clic en "Actualizar Preferencias"</li>
               <li>Obtén recomendaciones personalizadas</li>
@@ -110,7 +111,7 @@
             <ol>
               <li>Ve a la sección "Usuarios"</li>
               <li>Para crear: Completa nombre y email, haz clic en "Crear Usuario"</li>
-              <li>Para buscar: Ingresa el ID del usuario, haz clic en "Buscar Usuario"</li>
+              <li>Para buscar: Ingresa el nombre o email del usuario, haz clic en "Buscar Usuario"</li>
             </ol>
           </div>
         </div>
@@ -130,6 +131,9 @@
           </div>
           <div class="endpoint">
             <code>GET /api/users/{id}</code> - Obtener usuario
+          </div>
+          <div class="endpoint">
+            <code>GET /api/users/search?name=</code> - Buscar usuario por nombre
           </div>
         </div>
 

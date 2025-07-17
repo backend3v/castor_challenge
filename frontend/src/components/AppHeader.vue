@@ -12,7 +12,7 @@
       
       <nav class="main-nav">
         <router-link 
-          v-for="item in navItems" 
+          v-for="item in visibleNavItems" 
           :key="item.path"
           :to="item.path" 
           class="nav-link"
@@ -22,23 +22,72 @@
           <span class="nav-text">{{ item.name }}</span>
         </router-link>
       </nav>
+      
+      <div class="user-section">
+        <div v-if="authStore.isAuthenticated" class="user-info">
+          <span class="user-name">{{ authStore.user?.name || 'Usuario' }}</span>
+          <button @click="handleLogout" class="logout-btn">
+            <span class="logout-icon">🚪</span>
+            <span class="logout-text">Salir</span>
+          </button>
+        </div>
+        <div v-else class="auth-buttons">
+          <router-link to="/login" class="auth-btn login-btn">
+            Iniciar Sesión
+          </router-link>
+          <router-link to="/register" class="auth-btn register-btn">
+            Registrarse
+          </router-link>
+        </div>
+      </div>
     </div>
   </header>
 </template>
 
 <script>
+import { computed } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { useRouter } from 'vue-router'
+
 export default {
   name: 'AppHeader',
-  data() {
+  setup() {
+    const authStore = useAuthStore()
+    const router = useRouter()
+    
+    // Volver a agregar Tendencias al menú
+    const navItems = [
+      { path: '/', name: 'Dashboard', icon: '🏠', requiresAuth: true },
+      { path: '/favorites', name: 'Favoritos', icon: '❤️', requiresAuth: true },
+      { path: '/trends', name: 'Tendencias', icon: '📊', requiresAuth: true },
+      { path: '/recommendations', name: 'Recomendaciones', icon: '🎯', requiresAuth: true },
+      { path: '/users', name: 'Usuarios', icon: '👥', requiresAuth: true },
+      { path: '/guide', name: 'Guía', icon: '📖', requiresAuth: false }
+    ]
+    
+    const visibleNavItems = computed(() => {
+      if (authStore.isAuthenticated) {
+        // Solo muestra secciones privadas si está logueado
+        return navItems
+      } else {
+        // Solo muestra públicas
+        return navItems.filter(item => !item.requiresAuth)
+      }
+    })
+    
+    const handleLogout = async () => {
+      try {
+        authStore.logout()
+        router.push('/login')
+      } catch (error) {
+        console.error('Logout error:', error)
+      }
+    }
+    
     return {
-      navItems: [
-        { path: '/', name: 'Dashboard', icon: '🏠' },
-        { path: '/favorites', name: 'Favoritos', icon: '❤️' },
-        { path: '/trends', name: 'Tendencias', icon: '📊' },
-        { path: '/recommendations', name: 'Recomendaciones', icon: '🎯' },
-        { path: '/users', name: 'Usuarios', icon: '👥' },
-        { path: '/guide', name: 'Guía', icon: '📖' }
-      ]
+      authStore,
+      visibleNavItems,
+      handleLogout
     }
   }
 }
@@ -77,9 +126,11 @@ export default {
 }
 
 .app-title {
-  font-size: 1.5rem;
+  font-size: 1.1rem; /* Reducido */
   font-weight: 600;
   margin: 0;
+  margin-right: 2.5rem; /* Más espacio a la derecha */
+  white-space: nowrap;
 }
 
 .main-nav {
@@ -117,6 +168,86 @@ export default {
   font-size: 0.9rem;
 }
 
+.user-section {
+  display: flex;
+  align-items: center;
+  margin-left: 1.5rem; /* Separación extra del menú */
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-name {
+  font-weight: 500;
+  color: white;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.logout-icon {
+  font-size: 1rem;
+}
+
+.logout-text {
+  font-weight: 500;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.auth-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.login-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.login-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.register-btn {
+  background: white;
+  color: #667eea;
+  border: 1px solid white;
+}
+
+.register-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -134,6 +265,25 @@ export default {
   
   .nav-link {
     padding: 0.5rem;
+  }
+  
+  .user-section {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .user-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .auth-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .auth-btn {
+    text-align: center;
   }
 }
 </style> 

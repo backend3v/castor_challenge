@@ -1,24 +1,27 @@
--- Database initialization script for Castor Challenge
--- This script will be executed automatically when the MySQL container starts
+-- Database initialization script for Castor Challenge (simple login)
+-- Este script se ejecuta automáticamente al iniciar el contenedor MySQL
 
+CREATE DATABASE IF NOT EXISTS castor_db;
 USE castor_db;
 
--- Users table
+-- Tabla de usuarios (solo autenticación simple)
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    active BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    email_verified BOOLEAN DEFAULT FALSE,
     INDEX idx_email (email),
-    INDEX idx_active (active)
+    INDEX idx_is_active (is_active)
 );
 
--- Favorite videos table
+-- Tabla de favoritos
 CREATE TABLE IF NOT EXISTS favorite_videos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    video_id VARCHAR(20) NOT NULL, -- YouTube video ID
+    video_id VARCHAR(20) NOT NULL,
     title VARCHAR(500) NOT NULL,
     description TEXT,
     url VARCHAR(500) NOT NULL,
@@ -27,7 +30,7 @@ CREATE TABLE IF NOT EXISTS favorite_videos (
     duration VARCHAR(20),
     published_at TIMESTAMP,
     notes TEXT,
-    tags JSON, -- Store tags as JSON array
+    tags JSON,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_video (user_id, video_id),
@@ -37,15 +40,15 @@ CREATE TABLE IF NOT EXISTS favorite_videos (
     INDEX idx_channel (channel)
 );
 
--- Trend analysis table
+-- Tabla de análisis de tendencias
 CREATE TABLE IF NOT EXISTS trend_analysis (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     category VARCHAR(100) NOT NULL,
     region VARCHAR(10) NOT NULL,
     analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    results JSON NOT NULL, -- Store analysis results as JSON
-    criteria JSON, -- Store analysis criteria as JSON
+    results JSON NOT NULL,
+    criteria JSON,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_category (category),
@@ -53,14 +56,14 @@ CREATE TABLE IF NOT EXISTS trend_analysis (
     INDEX idx_analyzed_at (analyzed_at)
 );
 
--- View history table
+-- Tabla de historial de vistas
 CREATE TABLE IF NOT EXISTS view_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     video_id VARCHAR(20) NOT NULL,
     title VARCHAR(500) NOT NULL,
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    view_duration INT NOT NULL, -- Duration in seconds
+    view_duration INT NOT NULL,
     completed BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
@@ -69,22 +72,22 @@ CREATE TABLE IF NOT EXISTS view_history (
     INDEX idx_completed (completed)
 );
 
--- User preferences table
+-- Tabla de preferencias de usuario
 CREATE TABLE IF NOT EXISTS user_preferences (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    genres JSON, -- Store genres as JSON array
-    topics JSON, -- Store topics as JSON array
-    languages JSON, -- Store languages as JSON array
-    min_duration INT, -- Minimum duration in seconds
-    max_duration INT, -- Maximum duration in seconds
+    genres JSON,
+    topics JSON,
+    languages JSON,
+    min_duration INT,
+    max_duration INT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_preferences (user_id),
     INDEX idx_user_id (user_id)
 );
 
--- Trending videos cache table (for storing YouTube trending data)
+-- Cache de videos en tendencia
 CREATE TABLE IF NOT EXISTS trending_videos_cache (
     id INT AUTO_INCREMENT PRIMARY KEY,
     video_id VARCHAR(20) NOT NULL,
@@ -106,7 +109,7 @@ CREATE TABLE IF NOT EXISTS trending_videos_cache (
     INDEX idx_view_count (view_count)
 );
 
--- Video categories reference table
+-- Tabla de categorías de video
 CREATE TABLE IF NOT EXISTS video_categories (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -115,10 +118,11 @@ CREATE TABLE IF NOT EXISTS video_categories (
     INDEX idx_name (name)
 );
 
--- Insert sample user for testing
-INSERT IGNORE INTO users (name, email) VALUES ('Test User', 'test@example.com');
+-- Usuario de prueba (hash bcrypt para 'test1234')
+INSERT IGNORE INTO users (name, email, password_hash, is_active, email_verified) 
+VALUES ('Usuario Prueba', 'prueba@example.com', '$2b$12$w8QwQwQwQwQwQwQwQwQwQeQwQwQwQwQwQwQwQwQwQwQwQwQwQwQw', TRUE, FALSE);
 
--- Insert common video categories
+-- Categorías de video
 INSERT IGNORE INTO video_categories (id, name, description) VALUES
 (1, 'Film & Animation', 'Film and animation videos'),
 (2, 'Autos & Vehicles', 'Automotive and vehicle related content'),

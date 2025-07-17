@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from ..domain.models import ViewHistory, UserPreferences
 from ..domain.repositories import ViewHistoryRepository, UserPreferencesRepository
 from ..infrastructure.youtube_api import YouTubeAPIService
+from ..infrastructure.repositories.favorite_video_repository import MySQLFavoriteVideoRepository
 
 class RecommendationsUseCase:
     def __init__(self, history_repo: ViewHistoryRepository, 
@@ -11,6 +12,8 @@ class RecommendationsUseCase:
         self.history_repo = history_repo
         self.preferences_repo = preferences_repo
         self.youtube_service = youtube_service
+        # Acceso directo al repo de favoritos
+        self.favorite_repo = MySQLFavoriteVideoRepository()
     
     def register_view(self, user_id: int, video_id: str, title: str, 
                      view_duration: int, completed: bool = False) -> ViewHistory:
@@ -28,36 +31,33 @@ class RecommendationsUseCase:
         return self.history_repo.create(history)
     
     def get_recommendations(self, user_id: int, max_results: int = 10) -> List[Dict[str, Any]]:
-        """Get personalized video recommendations for a user"""
-        # Get user preferences
-        preferences = self.preferences_repo.get_by_user(user_id)
-        if not preferences:
-            # Return general trending videos if no preferences
-            return self.youtube_service.get_trending_videos(max_results=max_results)
-        
-        # Get recent viewing history
-        history = self.history_repo.get_by_user(user_id)
-        
-        # Generate search queries based on preferences and history
-        queries = self._generate_recommendation_queries(preferences, history)
-        
-        # Search for videos using generated queries
+        """Get personalized video recommendations for a user (solo si tiene favoritos)"""
+        # Obtener favoritos del usuario
+        favorites = self.favorite_repo.get_by_user(user_id)
+        if not favorites or len(favorites) == 0:
+            return []
+        # Generar queries a partir de los títulos/canales de los favoritos
+        queries = []
+        for fav in favorites:
+            if fav.title:
+                queries.append(fav.title)
+            if fav.channel:
+                queries.append(fav.channel)
+        # Buscar videos usando los queries
         recommendations = []
-        for query in queries[:3]:  # Use top 3 queries
+        for query in queries[:3]:
             try:
                 videos = self.youtube_service.search_videos(query, max_results=max_results//3)
                 recommendations.extend(videos)
             except Exception:
                 continue
-        
-        # Remove duplicates and limit results
+        # Eliminar duplicados y limitar resultados
         seen_videos = set()
         unique_recommendations = []
         for video in recommendations:
             if video['video_id'] not in seen_videos and len(unique_recommendations) < max_results:
                 seen_videos.add(video['video_id'])
                 unique_recommendations.append(video)
-        
         return unique_recommendations
     
     def update_preferences(self, user_id: int, genres: Optional[List[str]] = None,
