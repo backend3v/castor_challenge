@@ -72,10 +72,6 @@ npm run dev
 ```
 
 
-#### Frontend (.env)
-```
-VITE_API_URL=http://localhost:5000
-```
 
 ## 📄 Documentación de la API
 
