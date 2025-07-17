@@ -4,10 +4,8 @@ Una aplicación web full-stack construida con Python Flask (backend) y Vue.js (f
 
 ## 🔒 Sistema de Autenticación
 
-La aplicación utiliza un sistema de autenticación sencillo:
 
-- Registro y login de usuarios con contraseña encriptada (bcrypt)
-- No se usan JWT, refresh tokens ni roles
+- Registro y login de usuarios
 - Todas las funcionalidades requieren estar autenticado (excepto la guía)
 - El user_id del usuario autenticado se utiliza automáticamente en todas las peticiones
 

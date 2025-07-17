@@ -106,30 +106,31 @@ export const apiService = {
     }
   },
 
-  // Check backend health (system status)
-  // Returns { healthy: true } if backend is up, or { healthy: false, error } if not.
+  // System health check - calls backend /test endpoint
   testConnection: async () => {
+    // This method checks the overall system status by calling the backend /test endpoint
     try {
-      await api.get('/test')
-      return { healthy: true }
+      const response = await api.get('/test')
+      // Return a clear status based on backend response
+      return { success: true, data: response }
     } catch (error) {
-      return { healthy: false, error: error.message || 'Unable to connect to backend.' }
+      // Return a clear error status
+      return { success: false, error: error?.response?.data || error.message }
     }
   },
 
-  // Check database connection health
-  // Returns { healthy: true } if DB is up, or { healthy: false, error } if not.
+  // Database connection check - calls backend /test_db endpoint
   testDatabase: async () => {
+    // This method checks the database connection by calling the backend /test_db endpoint
     try {
       const response = await api.get('/test_db')
-      if (response.status === 'ok' || response.status === 'connected') {
-        return { healthy: true }
-      }
-      return { healthy: false, error: response.message || 'Database not healthy.' }
+      // Return a clear status based on backend response
+      return { success: true, data: response }
     } catch (error) {
-      return { healthy: false, error: error.message || 'Unable to connect to database.' }
+      // Return a clear error status
+      return { success: false, error: error?.response?.data || error.message }
     }
-  }
+  },
 }
 
 // YouTube API service
