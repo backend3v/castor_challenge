@@ -16,6 +16,14 @@ class UserRepository(ABC):
         pass
     
     @abstractmethod
+    def get_all(self) -> List[User]:
+        pass
+    
+    @abstractmethod
+    def search_by_name(self, name: str) -> List[User]:
+        pass
+    
+    @abstractmethod
     def update(self, user: User) -> User:
         pass
     

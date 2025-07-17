@@ -74,6 +74,40 @@ class MySQLUserRepository(UserRepository):
             if connection:
                 connection.close()
     
+    def get_all(self) -> List[User]:
+        """Get all users"""
+        try:
+            connection = self.db_connection.get_connection()
+            with connection.cursor() as cursor:
+                sql = "SELECT * FROM users ORDER BY name ASC"
+                cursor.execute(sql)
+                results = cursor.fetchall()
+                
+                return [self._map_to_user(row) for row in results]
+                
+        except Exception as e:
+            raise Exception(f"Error getting all users: {str(e)}")
+        finally:
+            if connection:
+                connection.close()
+    
+    def search_by_name(self, name: str) -> List[User]:
+        """Search users by name (partial match)"""
+        try:
+            connection = self.db_connection.get_connection()
+            with connection.cursor() as cursor:
+                sql = "SELECT * FROM users WHERE name LIKE %s ORDER BY name ASC"
+                cursor.execute(sql, (f'%{name}%',))
+                results = cursor.fetchall()
+                
+                return [self._map_to_user(row) for row in results]
+                
+        except Exception as e:
+            raise Exception(f"Error searching users by name: {str(e)}")
+        finally:
+            if connection:
+                connection.close()
+    
     def update(self, user: User) -> User:
         """Update user"""
         try:

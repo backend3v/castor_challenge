@@ -41,6 +41,8 @@ export const apiService = {
   // Users
   createUser: (userData) => api.post('/api/users', userData),
   getUser: (userId) => api.get(`/api/users/${userId}`),
+  getAllUsers: () => api.get('/api/users'),
+  searchUsers: (name) => api.get('/api/users/search', { params: { name } }),
 
   // Favorites
   getFavorites: (userId) => api.get(`/api/favorites/${userId}`),

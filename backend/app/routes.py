@@ -95,6 +95,52 @@ def register_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
     
+    @app.route("/api/users", methods=["GET"])
+    def get_all_users():
+        """Get all users"""
+        try:
+            users = user_repo.get_all()
+            return jsonify({
+                "success": True,
+                "users": [
+                    {
+                        "id": user.id,
+                        "name": user.name,
+                        "email": user.email,
+                        "created_at": user.created_at.isoformat(),
+                        "active": user.active
+                    } for user in users
+                ],
+                "total": len(users)
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route("/api/users/search", methods=["GET"])
+    def search_users():
+        """Search users by name"""
+        try:
+            name = request.args.get('name', '')
+            if not name:
+                return jsonify({"error": "Name parameter is required"}), 400
+            
+            users = user_repo.search_by_name(name)
+            return jsonify({
+                "success": True,
+                "users": [
+                    {
+                        "id": user.id,
+                        "name": user.name,
+                        "email": user.email,
+                        "created_at": user.created_at.isoformat(),
+                        "active": user.active
+                    } for user in users
+                ],
+                "total": len(users)
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
     # Favorites endpoints
     @app.route("/api/favorites/<int:user_id>", methods=["GET"])
     def get_favorites(user_id):

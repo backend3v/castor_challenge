@@ -56,6 +56,12 @@ castor_challenge/
 - MySQL database integration
 - Environment-based configuration
 - Modular structure following clean architecture
+- **Enhanced User Management System**:
+  - Complete CRUD operations for users
+  - Advanced search functionality (by ID and name)
+  - Bulk user retrieval with pagination support
+  - Real-time validation and error handling
+  - Clean repository pattern implementation
 
 ## 📚 API Documentation
 
@@ -308,9 +314,8 @@ POST /api/users
 **Body**:
 ```json
 {
-  "username": "john_doe",
-  "email": "john@example.com",
-  "name": "John Doe"
+  "name": "John Doe",
+  "email": "john@example.com"
 }
 ```
 
@@ -320,19 +325,18 @@ POST /api/users
   "success": true,
   "user": {
     "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com",
     "name": "John Doe",
+    "email": "john@example.com",
     "created_at": "2023-01-01T00:00:00Z"
   }
 }
 ```
 
-#### Get User
+#### Get User by ID
 ```http
 GET /api/users/{user_id}
 ```
-**Description**: Get user information
+**Description**: Get user information by ID
 **Parameters**:
 - `user_id` (path): User identifier
 
@@ -342,11 +346,65 @@ GET /api/users/{user_id}
   "success": true,
   "user": {
     "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com",
     "name": "John Doe",
-    "created_at": "2023-01-01T00:00:00Z"
+    "email": "john@example.com",
+    "created_at": "2023-01-01T00:00:00Z",
+    "active": true
   }
+}
+```
+
+#### Get All Users
+```http
+GET /api/users
+```
+**Description**: Get all users in the system
+**Response**:
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "created_at": "2023-01-01T00:00:00Z",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "created_at": "2023-01-02T00:00:00Z",
+      "active": true
+    }
+  ],
+  "total": 2
+}
+```
+
+#### Search Users by Name
+```http
+GET /api/users/search?name=john
+```
+**Description**: Search users by name (partial match)
+**Query Parameters**:
+- `name` (required): Name to search for (supports partial matching)
+
+**Response**:
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "created_at": "2023-01-01T00:00:00Z",
+      "active": true
+    }
+  ],
+  "total": 1
 }
 ```
 
@@ -483,6 +541,23 @@ curl http://localhost:5000/api/favorites/1
 curl http://localhost:5000/api/recommendations/1
 ```
 
+### Test User Management
+```bash
+# Get all users
+curl http://localhost:5000/api/users
+
+# Get user by ID (replace USER_ID)
+curl http://localhost:5000/api/users/1
+
+# Search users by name
+curl "http://localhost:5000/api/users/search?name=john"
+
+# Create new user
+curl -X POST http://localhost:5000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Test User", "email": "test@example.com"}'
+```
+
 ## 🔑 YouTube API Setup
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -528,6 +603,14 @@ The backend follows hexagonal architecture with clear separation of concerns:
 - Environment-based configuration
 - Modern, minimalist UI
 - Dynamic app name from environment variables
+- **Enhanced User Management Interface**:
+  - Create new users with real-time validation
+  - Search users by ID with error handling
+  - Search users by name (partial matching)
+  - View all users in the system
+  - Elegant user list display with hover effects
+  - Form validation with visual feedback
+  - Loading states and error messages
 
 ### 📦 Build for Production
 
@@ -560,6 +643,9 @@ The project follows strict development rules documented in separate files:
 - Comments in English explaining the "why"
 - Consistent naming conventions
 - Modular and reusable components
+- **Enhanced Validation**: Real-time form validation with visual feedback
+- **Error Handling**: Comprehensive error handling across all layers
+- **User Experience**: Loading states, success messages, and intuitive interfaces
 
 ## 🚀 Next Steps
 
@@ -569,6 +655,25 @@ The project follows strict development rules documented in separate files:
 4. 🔄 Set up CI/CD pipeline
 5. 📊 Add analytics and monitoring
 6. 🔒 Implement rate limiting and security
+
+## 🆕 Recent Updates
+
+### User Management Enhancements (Latest)
+- ✅ **New API Endpoints**: Added `/api/users` (GET) and `/api/users/search` (GET)
+- ✅ **Enhanced Repository**: Implemented `get_all()` and `search_by_name()` methods
+- ✅ **Frontend Improvements**: 
+  - Added search by name functionality with partial matching
+  - Added "Consult All Users" button
+  - Improved user list display with modern UI
+  - Enhanced form validation and error handling
+  - Added loading states and user feedback
+- ✅ **Better UX**: Real-time validation, hover effects, and responsive design
+
+### Technical Improvements
+- ✅ **Repository Pattern**: Extended UserRepository interface with new methods
+- ✅ **Error Handling**: Comprehensive error handling for all user operations
+- ✅ **Validation**: Client-side and server-side validation for all inputs
+- ✅ **Performance**: Optimized database queries with proper indexing
 
 ## 🤝 Contributing
 

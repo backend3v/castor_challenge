@@ -55,23 +55,42 @@
             v-model="searchUserId" 
             type="number" 
             class="form-input" 
-            :class="{ 'error': errors.userId }"
             placeholder="1"
-            @blur="validateUserId"
-            @input="clearError('userId')"
             min="1"
-            required
           >
-          <span v-if="errors.userId" class="error-message">{{ errors.userId }}</span>
         </div>
-        <button @click="getUser" class="btn btn-secondary" :disabled="loadingUser || errors.userId">
-          {{ loadingUser ? 'Buscando...' : 'Buscar Usuario' }}
+        <button @click="getUser" class="btn btn-secondary" :disabled="loadingUser">
+          {{ loadingUser ? 'Buscando...' : 'Buscar por ID' }}
+        </button>
+      </div>
+      
+      <!-- Search by name -->
+      <div class="user-search">
+        <div class="form-group">
+          <label class="form-label">Nombre de Usuario</label>
+          <input 
+            v-model="searchUserName" 
+            type="text" 
+            class="form-input" 
+            placeholder="Nombre completo o parcial"
+            maxlength="100"
+          >
+        </div>
+        <button @click="searchUserByName" class="btn btn-secondary" :disabled="searchingByName">
+          {{ searchingByName ? 'Buscando...' : 'Buscar por Nombre' }}
+        </button>
+      </div>
+      
+      <!-- Get all users -->
+      <div class="user-search get-all-users-section">
+        <button @click="getAllUsers" class="btn btn-primary" :disabled="loadingAllUsers">
+          {{ loadingAllUsers ? 'Cargando...' : '📋 Consultar Todos los Usuarios' }}
         </button>
       </div>
     </div>
 
     <!-- User Details -->
-    <div v-if="userDetails" class="card">
+    <div v-if="userDetails && !Array.isArray(userDetails)" class="card">
       <h3>👤 Detalles del Usuario</h3>
       <div class="user-details">
         <div class="detail-item">
@@ -93,6 +112,31 @@
           </span>
         </div>
       </div>
+    </div>
+
+    <!-- Multiple Users Results -->
+    <div v-if="Array.isArray(userDetails) && userDetails.length > 0" class="card">
+      <h3>👥 Resultados de Búsqueda ({{ userDetails.length }} usuarios)</h3>
+      <div class="users-list">
+        <div v-for="user in userDetails" :key="user.id" class="user-item">
+          <div class="user-info">
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-email">{{ user.email }}</div>
+            <div class="user-meta">
+              <span class="user-id">ID: {{ user.id }}</span>
+              <span :class="user.active ? 'status-active' : 'status-inactive'">
+                {{ user.active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div v-if="Array.isArray(userDetails) && userDetails.length === 0" class="card">
+      <h3>🔍 No se encontraron usuarios</h3>
+      <p>No se encontraron usuarios que coincidan con tu búsqueda.</p>
     </div>
 
     <!-- Sample Users -->
@@ -117,7 +161,10 @@ export default {
     return {
       creatingUser: false,
       loadingUser: false,
+      searchingByName: false,
+      loadingAllUsers: false,
       searchUserId: '',
+      searchUserName: '',
       userDetails: null,
       newUser: {
         name: '',
@@ -125,8 +172,7 @@ export default {
       },
       errors: {
         name: '',
-        email: '',
-        userId: ''
+        email: ''
       }
     }
   },
@@ -163,13 +209,62 @@ export default {
 
       this.loadingUser = true
       try {
+        console.log('Buscando usuario con ID:', this.searchUserId)
         const response = await apiService.getUser(this.searchUserId)
+        console.log('Respuesta del servidor:', response.data)
         this.userDetails = response.data.user
+        if (!this.userDetails) {
+          alert('No se encontró ningún usuario con ese ID.')
+        }
       } catch (err) {
+        console.error('Error al buscar usuario:', err)
         alert('Error al buscar usuario: ' + (err.response?.data?.message || err.message))
         this.userDetails = null
       } finally {
         this.loadingUser = false
+      }
+    },
+
+    async searchUserByName() {
+      if (!this.searchUserName) {
+        alert('Por favor ingresa un nombre de usuario para buscar')
+        return
+      }
+
+      this.searchingByName = true
+      try {
+        console.log('Buscando usuario con nombre:', this.searchUserName)
+        const response = await apiService.searchUsers(this.searchUserName)
+        console.log('Respuesta del servidor:', response.data)
+        this.userDetails = response.data.users
+        if (this.userDetails.length === 0) {
+          alert('No se encontró ningún usuario con ese nombre.')
+        }
+      } catch (err) {
+        console.error('Error al buscar usuario por nombre:', err)
+        alert('Error al buscar usuario por nombre: ' + (err.response?.data?.message || err.message))
+        this.userDetails = null
+      } finally {
+        this.searchingByName = false
+      }
+    },
+
+    async getAllUsers() {
+      this.loadingAllUsers = true
+      try {
+        console.log('Obteniendo todos los usuarios')
+        const response = await apiService.getAllUsers()
+        console.log('Respuesta del servidor:', response.data)
+        this.userDetails = response.data.users
+        if (this.userDetails.length === 0) {
+          alert('No hay usuarios registrados en el sistema.')
+        }
+      } catch (err) {
+        console.error('Error al obtener usuarios:', err)
+        alert('Error al obtener usuarios: ' + (err.response?.data?.message || err.message))
+        this.userDetails = null
+      } finally {
+        this.loadingAllUsers = false
       }
     },
 
@@ -197,15 +292,6 @@ export default {
         this.errors.email = 'Email inválido';
       } else {
         this.errors.email = '';
-      }
-    },
-    validateUserId() {
-      if (!this.searchUserId) {
-        this.errors.userId = 'El ID de usuario es requerido';
-      } else if (isNaN(this.searchUserId) || parseInt(this.searchUserId) < 1) {
-        this.errors.userId = 'El ID de usuario debe ser un número positivo';
-      } else {
-        this.errors.userId = '';
       }
     },
     clearError(field) {
@@ -244,6 +330,12 @@ export default {
   display: flex;
   gap: 1rem;
   align-items: end;
+  margin-bottom: 1rem;
+}
+
+.user-search.get-all-users-section {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .user-details {
@@ -277,6 +369,52 @@ export default {
   background: #e9ecef;
   border-radius: 8px;
   margin-bottom: 0.5rem;
+}
+
+.users-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-item {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  transition: all 0.2s ease;
+}
+
+.user-item:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.user-info {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.user-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #495057;
+}
+
+.user-email {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.user-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.user-id {
+  color: #6c757d;
+  font-weight: 500;
 }
 
 .error-message {
