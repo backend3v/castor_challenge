@@ -71,17 +71,6 @@ npm install
 npm run dev
 ```
 
-### 4. Variables de Entorno
-
-#### Backend (.env)
-```
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=castor_db
-DB_USER=castor_user
-DB_PASSWORD=castor_password
-YOUTUBE_API_KEY=your_youtube_api_key
-```
 
 #### Frontend (.env)
 ```
