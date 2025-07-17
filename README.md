@@ -124,7 +124,6 @@ http://localhost:5000
 
 ## 🔄 Actualizaciones Recientes
 
-- Simplificación del sistema de autenticación (eliminados JWT, roles y sesiones avanzadas)
 - El frontend usa siempre el usuario autenticado, nunca solicita el ID
 - Las recomendaciones solo aparecen si el usuario tiene favoritos
 - Se eliminaron scripts y migraciones obsoletas
